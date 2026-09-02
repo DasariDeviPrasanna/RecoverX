@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import AuthGuard from "@/components/auth/AuthGuard";
 
 export const metadata: Metadata = {
   title: "RecoverX - AI Revenue Intelligence",
@@ -14,7 +15,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-[#08070D] text-white antialiased">
-        {children}
+        <AuthGuard>
+          {children}
+        </AuthGuard>
       </body>
     </html>
   );
