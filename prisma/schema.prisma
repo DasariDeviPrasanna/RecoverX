@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PaymentStatus {
+  SUCCESS
+  FAILED
+  PENDING
+  ABANDONED
+  REFUNDED
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RecoveryStatus {
+  PENDING
+  ANALYZING
+  RETRYING
+  MESSAGE_SENT
+  RECOVERED
+  FAILED
+  STOPPED
+}
+
+enum RecoveryActionType {
+  RETRY_PAYMENT
+  SEND_MESSAGE
+  SEND_REMINDER
+  ESCALATE
+  STOP
+}
+
+enum AuditActor {
+  SYSTEM
+  AI_AGENT
+  MERCHANT
+}
+
+model Customer {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  phone         String?
+  language      String   @default("English")
+  lifetimeValue Float    @default(0)
+  riskScore     Int      @default(0)
+
+  payments      Payment[]
+  recoveries    RecoveryAction[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  customerId      String
+  customer        Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  amount          Float
+  status          PaymentStatus
+  failureReason   String?
+  riskScore       Int           @default(0)
+  riskLevel       RiskLevel     @default(LOW)
+
+  recoveryStatus  RecoveryStatus @default(PENDING)
+  retryCount      Int            @default(0)
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  recoveries      RecoveryAction[]
+  auditLogs       AuditLog[]
+}
+
+model RecoveryAction {
+  id              String             @id @default(cuid())
+
+  paymentId       String
+  payment         Payment            @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  customerId      String
+  customer        Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  actionType      RecoveryActionType
+  status          RecoveryStatus
+
+  reason          String?
+  aiConfidence    Float?
+  amountRecovered Float              @default(0)
+
+  attemptNumber   Int                @default(1)
+
+  executedAt      DateTime?
+  createdAt       DateTime           @default(now())
+}
+
+model AuditLog {
+  id          String      @id @default(cuid())
+
+  paymentId   String?
+  payment     Payment?    @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  actor       AuditActor
+  event       String
+  action      String?
+  reason      String?
+  metadata    Json?
+
+  createdAt   DateTime @default(now())
+}
