@@ -1,43 +1,50 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { analyzePaymentRisk } from "@/lib/risk-engine";
+import { PaymentStatus } from "@/src/generated/prisma/client";
 
 export async function POST(request: Request) {
   try {
-    // -----------------------------------------
-    // 1. Read request body
-    // -----------------------------------------
-
     const body = await request.json();
 
     const customerName = String(body.customerName || "").trim();
     const email = String(body.email || "").trim();
-    const phone = String(body.phone || "").trim();
+    const phone = body.phone ? String(body.phone).trim() : null;
 
     const amount = Number(body.amount);
 
-    const status = String(body.status || "FAILED");
+    const status = String(body.status || "FAILED") as PaymentStatus;
 
-    const failureReason =
-      body.failureReason
-        ? String(body.failureReason)
-        : null;
+    const failureReason = body.failureReason
+      ? String(body.failureReason).trim()
+      : null;
+
+    const dueDate = body.dueDate
+      ? String(body.dueDate)
+      : null;
 
     const retryCount = Number(body.retryCount || 0);
 
-    const language = String(
-      body.language || "English"
-    );
+    const language = String(body.language || "English");
 
-    // -----------------------------------------
-    // 2. Validate input
-    // -----------------------------------------
+    // ---------------------------------------------------------
+    // VALIDATION
+    // ---------------------------------------------------------
 
     if (!customerName) {
       return NextResponse.json(
         {
           success: false,
-          error: "Customer name is required.",
+          error: "Customer name is required",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!email) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Customer email is required",
         },
         { status: 400 }
       );
@@ -47,7 +54,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: "Payment amount must be greater than zero.",
+          error: "Payment amount must be greater than 0",
         },
         { status: 400 }
       );
@@ -57,70 +64,62 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: "Retry count must be a valid non-negative number.",
+          error: "Retry count must be 0 or greater",
         },
         { status: 400 }
       );
     }
 
-    // -----------------------------------------
-    // 3. Create a unique email if merchant
-    //    doesn't provide one
-    // -----------------------------------------
+    // ---------------------------------------------------------
+    // FIND OR CREATE CUSTOMER
+    // ---------------------------------------------------------
 
-    const customerEmail =
-      email ||
-      `customer-${Date.now()}-${Math.random()
-        .toString(36)
-        .substring(2, 8)}@recoverx.local`;
-
-    // -----------------------------------------
-    // 4. Find existing customer or create one
-    // -----------------------------------------
-
-    const existingCustomer = await db.customer.findUnique({
+    let customer = await db.customer.findUnique({
       where: {
-        email: customerEmail,
+        email,
       },
     });
 
-    let customer;
-
-    if (existingCustomer) {
-      customer = await db.customer.update({
-        where: {
-          id: existingCustomer.id,
-        },
-        data: {
-          name: customerName,
-          phone: phone || null,
-          language,
-        },
-      });
-    } else {
+    if (!customer) {
       customer = await db.customer.create({
         data: {
           name: customerName,
-          email: customerEmail,
-          phone: phone || null,
+          email,
+          phone,
           language,
-          lifetimeValue: 0,
+          lifetimeValue: amount,
           riskScore: 0,
+        },
+      });
+    } else {
+      customer = await db.customer.update({
+        where: {
+          id: customer.id,
+        },
+        data: {
+          name: customerName,
+          phone,
+          language,
+          lifetimeValue: {
+            increment: amount,
+          },
         },
       });
     }
 
-    // -----------------------------------------
-    // 5. Run RecoverX Risk Engine
-    // -----------------------------------------
+    // ---------------------------------------------------------
+    // RISK ENGINE
+    // ---------------------------------------------------------
+
+    const { analyzePaymentRisk } = await import("@/lib/risk-engine");
 
     const analysis = analyzePaymentRisk({
-      amount,
-      status,
-      failureReason,
-      retryCount,
-      customerRiskScore: customer.riskScore,
-    });
+  amount,
+  status,
+  failureReason,
+  retryCount,
+  customerRiskScore: customer.riskScore,
+});
 
     const {
       riskScore,
@@ -132,15 +131,28 @@ export async function POST(request: Request) {
       aiConfidence,
     } = analysis;
 
-    // -----------------------------------------
-    // 6. Create payment
-    // -----------------------------------------
+    // ---------------------------------------------------------
+    // UPDATE CUSTOMER RISK
+    // ---------------------------------------------------------
+
+    await db.customer.update({
+      where: {
+        id: customer.id,
+      },
+      data: {
+        riskScore,
+      },
+    });
+
+    // ---------------------------------------------------------
+    // CREATE PAYMENT
+    // ---------------------------------------------------------
 
     const payment = await db.payment.create({
       data: {
         customerId: customer.id,
         amount,
-        status,
+        status: status as PaymentStatus,
         failureReason,
         riskScore,
         riskLevel,
@@ -149,116 +161,82 @@ export async function POST(request: Request) {
       },
     });
 
-    // -----------------------------------------
-    // 7. Update customer lifetime value
-    // -----------------------------------------
-
-    await db.customer.update({
-      where: {
-        id: customer.id,
-      },
-      data: {
-        lifetimeValue: {
-          increment: amount,
-        },
-        riskScore,
-      },
-    });
-
-    // -----------------------------------------
-    // 8. Create AI recovery action
-    // -----------------------------------------
+    // ---------------------------------------------------------
+    // CREATE RECOVERY ACTION
+    // ---------------------------------------------------------
 
     const recoveryAction = await db.recoveryAction.create({
       data: {
         paymentId: payment.id,
         customerId: customer.id,
-
         actionType: recommendedAction,
-
         status: "PENDING",
-
         reason: actionReason,
-
         aiConfidence,
-
         amountRecovered: 0,
-
         attemptNumber: retryCount + 1,
       },
     });
 
-    // -----------------------------------------
-    // 9. Create audit log
-    // -----------------------------------------
+    // ---------------------------------------------------------
+    // CREATE AUDIT LOG
+    // ---------------------------------------------------------
 
     await db.auditLog.create({
       data: {
         paymentId: payment.id,
-
         actor: "AI_AGENT",
-
         event: "PAYMENT_ANALYZED",
-
         action: recommendedAction,
-
         reason: diagnosis,
-
         metadata: JSON.stringify({
-          amount,
-          customerName,
-          status,
-          failureReason,
-
           riskScore,
           riskLevel,
-
           recoveryProbability,
-
-          recommendedAction,
-
-          actionReason,
-
           aiConfidence,
-
+          failureReason,
           retryCount,
+          dueDate,
+          language,
         }),
       },
     });
 
-    // -----------------------------------------
-    // 10. Return complete result
-    // -----------------------------------------
+    // ---------------------------------------------------------
+    // RESPONSE
+    // ---------------------------------------------------------
 
     return NextResponse.json(
       {
         success: true,
 
-        message: "Payment added and analyzed successfully.",
-
         payment: {
           id: payment.id,
-          amount: payment.amount,
+          customerId: payment.customerId,
+          amount: Number(payment.amount),
           status: payment.status,
           failureReason: payment.failureReason,
           riskScore: payment.riskScore,
           riskLevel: payment.riskLevel,
           recoveryStatus: payment.recoveryStatus,
           retryCount: payment.retryCount,
+          createdAt: payment.createdAt,
         },
 
         customer: {
           id: customer.id,
-          name: customerName,
-          email: customerEmail,
-          phone,
-          language,
+          name: customer.name,
+          email: customer.email,
+          phone: customer.phone,
+          language: customer.language,
+          lifetimeValue: Number(customer.lifetimeValue),
+          riskScore: customer.riskScore,
         },
 
         analysis: {
+          diagnosis,
           riskScore,
           riskLevel,
-          diagnosis,
           recoveryProbability,
           recommendedAction,
           actionReason,
@@ -269,26 +247,24 @@ export async function POST(request: Request) {
           id: recoveryAction.id,
           actionType: recoveryAction.actionType,
           status: recoveryAction.status,
+          reason: recoveryAction.reason,
+          aiConfidence: recoveryAction.aiConfidence,
+          amountRecovered: Number(recoveryAction.amountRecovered),
           attemptNumber: recoveryAction.attemptNumber,
         },
       },
       { status: 201 }
     );
   } catch (error) {
-    // -----------------------------------------
-    // 11. Error handling
-    // -----------------------------------------
-
-    console.error("PAYMENT API ERROR:", error);
+    console.error("Payment API error:", error);
 
     return NextResponse.json(
       {
         success: false,
-
         error:
           error instanceof Error
             ? error.message
-            : "Failed to add payment.",
+            : "Failed to process payment data",
       },
       { status: 500 }
     );
