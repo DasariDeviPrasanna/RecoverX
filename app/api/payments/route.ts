@@ -148,18 +148,18 @@ export async function POST(request: Request) {
     // CREATE PAYMENT
     // ---------------------------------------------------------
 
-    const payment = await db.payment.create({
-      data: {
-        customerId: customer.id,
-        amount,
-        status: status as PaymentStatus,
-        failureReason,
-        riskScore,
-        riskLevel,
-        recoveryStatus: "PENDING",
-        retryCount,
-      },
-    });
+   const payment = await db.payment.create({
+  data: {
+    customerId: customer.id,
+    amount,
+    status: status as PaymentStatus,
+    failureReason,
+    riskScore,
+    riskLevel,
+    recoveryStatus: "PENDING",
+    retryCount,
+  },
+});
 
     // ---------------------------------------------------------
     // CREATE RECOVERY ACTION
