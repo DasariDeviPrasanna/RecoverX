@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import {
+  PaymentStatus,
+  RecoveryActionType,
+  RecoveryStatus,
+  AuditActor,
+} from "@/src/generated/prisma/client";
 
-// GET — fetch all recovery opportunities
 export async function GET() {
   try {
     const recoveries = await db.recoveryAction.findMany({
@@ -11,7 +16,19 @@ export async function GET() {
             customer: true,
           },
         },
-        customer: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    const auditLogs = await db.auditLog.findMany({
+      include: {
+        payment: {
+          include: {
+            customer: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -21,46 +38,43 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       recoveries,
+      auditLogs,
     });
   } catch (error) {
-    console.error("RECOVERIES GET ERROR:", error);
+    console.error("GET /api/recoveries error:", error);
 
     return NextResponse.json(
       {
         success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to fetch recovery opportunities.",
+        error: "Failed to load recovery data",
       },
       { status: 500 }
     );
   }
 }
 
-// POST — approve or stop a recovery action
 export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    const actionId = String(body.actionId || "");
-    const action = String(body.action || "");
+    const recoveryId = String(body.recoveryId || "");
+    const action = String(body.action || "").toUpperCase();
 
-    if (!actionId) {
+    if (!recoveryId) {
       return NextResponse.json(
         {
           success: false,
-          error: "Recovery action ID is required.",
+          error: "recoveryId is required",
         },
         { status: 400 }
       );
     }
 
-    if (action !== "APPROVE" && action !== "STOP") {
+    if (!action) {
       return NextResponse.json(
         {
           success: false,
-          error: "Action must be APPROVE or STOP.",
+          error: "action is required",
         },
         { status: 400 }
       );
@@ -68,11 +82,14 @@ export async function POST(request: Request) {
 
     const recovery = await db.recoveryAction.findUnique({
       where: {
-        id: actionId,
+        id: recoveryId,
       },
       include: {
-        payment: true,
-        customer: true,
+        payment: {
+          include: {
+            customer: true,
+          },
+        },
       },
     });
 
@@ -80,20 +97,25 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: "Recovery action not found.",
+          error: "Recovery action not found",
         },
         { status: 404 }
       );
     }
 
-    // STOP recovery
+    /*
+     * ==========================================
+     * STOP RECOVERY
+     * ==========================================
+     */
+
     if (action === "STOP") {
       const updatedRecovery = await db.recoveryAction.update({
         where: {
-          id: actionId,
+          id: recoveryId,
         },
         data: {
-          status: "STOPPED",
+          status: RecoveryStatus.STOPPED,
         },
       });
 
@@ -102,95 +124,281 @@ export async function POST(request: Request) {
           id: recovery.paymentId,
         },
         data: {
-          recoveryStatus: "STOPPED",
+          recoveryStatus: RecoveryStatus.STOPPED,
         },
       });
 
       await db.auditLog.create({
         data: {
           paymentId: recovery.paymentId,
-          actor: "MERCHANT",
+          actor: AuditActor.MERCHANT,
           event: "RECOVERY_STOPPED",
           action: "STOP",
-          reason: "Merchant stopped the recovery action.",
+          reason: "Recovery stopped by merchant",
           metadata: JSON.stringify({
-            recoveryActionId: actionId,
+            recoveryId,
           }),
         },
       });
 
       return NextResponse.json({
         success: true,
-        message: "Recovery action stopped.",
+        recovered: false,
+        amountRecovered: 0,
         recovery: updatedRecovery,
+        message: "Recovery stopped",
       });
     }
 
-    // APPROVE recovery
-    let newPaymentStatus:
-      | "RETRYING"
-      | "MESSAGE_SENT"
-      | "PENDING";
+    /*
+     * ==========================================
+     * APPROVE RECOVERY
+     * ==========================================
+     */
 
-    if (recovery.actionType === "RETRY_PAYMENT") {
-      newPaymentStatus = "RETRYING";
-    } else if (
-      recovery.actionType === "SEND_MESSAGE" ||
-      recovery.actionType === "SEND_REMINDER"
-    ) {
-      newPaymentStatus = "MESSAGE_SENT";
-    } else {
-      newPaymentStatus = "PENDING";
+    if (action === "APPROVE") {
+      const recoveryType = recovery.actionType;
+
+      /*
+       * Mark the recovery as executing.
+       */
+
+      let executingStatus: RecoveryStatus;
+
+      if (recoveryType === RecoveryActionType.RETRY_PAYMENT) {
+        executingStatus = RecoveryStatus.RETRYING;
+      } else if (
+        recoveryType === RecoveryActionType.SEND_MESSAGE ||
+        recoveryType === RecoveryActionType.SEND_REMINDER
+      ) {
+        executingStatus = RecoveryStatus.MESSAGE_SENT;
+      } else {
+        executingStatus = RecoveryStatus.PENDING;
+      }
+
+      const approvedRecovery = await db.recoveryAction.update({
+        where: {
+          id: recoveryId,
+        },
+        data: {
+          status: executingStatus,
+          executedAt: new Date(),
+        },
+      });
+
+      await db.payment.update({
+        where: {
+          id: recovery.paymentId,
+        },
+        data: {
+          recoveryStatus: executingStatus,
+        },
+      });
+
+      /*
+       * Record merchant approval.
+       */
+
+      await db.auditLog.create({
+        data: {
+          paymentId: recovery.paymentId,
+          actor: AuditActor.MERCHANT,
+          event: "RECOVERY_APPROVED",
+          action: recoveryType,
+          reason: "Recovery approved by merchant",
+          metadata: JSON.stringify({
+            recoveryId,
+            attemptNumber: recovery.attemptNumber,
+          }),
+        },
+      });
+
+      /*
+       * ==========================================
+       * SIMULATED RECOVERY ENGINE
+       * ==========================================
+       *
+       * For the hackathon demo:
+       *
+       * RETRY_PAYMENT
+       * + AI confidence >= 80
+       * + retry count < 3
+       *
+       * = successful recovery.
+       */
+
+      const aiConfidence = recovery.aiConfidence ?? 0;
+
+      const canRecover =
+        recoveryType === RecoveryActionType.RETRY_PAYMENT &&
+        aiConfidence >= 80 &&
+        recovery.payment.retryCount < 3;
+
+      if (canRecover) {
+        const recoveredAmount = recovery.payment.amount;
+
+        /*
+         * Mark recovery as successful.
+         */
+
+        const finalRecovery = await db.recoveryAction.update({
+          where: {
+            id: recoveryId,
+          },
+          data: {
+            status: RecoveryStatus.RECOVERED,
+            amountRecovered: recoveredAmount,
+            executedAt: new Date(),
+          },
+        });
+
+        /*
+         * Mark payment as successful.
+         */
+
+        await db.payment.update({
+          where: {
+            id: recovery.paymentId,
+          },
+          data: {
+            status: PaymentStatus.SUCCESS,
+            recoveryStatus: RecoveryStatus.RECOVERED,
+            retryCount: {
+              increment: 1,
+            },
+          },
+        });
+
+        /*
+         * Record successful recovery.
+         */
+
+        await db.auditLog.create({
+          data: {
+            paymentId: recovery.paymentId,
+            actor: AuditActor.AI_AGENT,
+            event: "PAYMENT_RECOVERED",
+            action: recoveryType,
+            reason: "Recovery retry succeeded",
+            metadata: JSON.stringify({
+              recoveryId,
+              amountRecovered: recoveredAmount,
+              aiConfidence,
+            }),
+          },
+        });
+
+        return NextResponse.json({
+          success: true,
+          recovered: true,
+          amountRecovered: recoveredAmount,
+          recovery: finalRecovery,
+          message: `₹${Number(recoveredAmount).toLocaleString(
+            "en-IN"
+          )} recovered successfully`,
+        });
+      }
+
+      /*
+       * ==========================================
+       * RECOVERY DID NOT COMPLETE
+       * ==========================================
+       */
+
+      let finalStatus: RecoveryStatus;
+
+      if (
+        recoveryType === RecoveryActionType.SEND_MESSAGE ||
+        recoveryType === RecoveryActionType.SEND_REMINDER
+      ) {
+        finalStatus = RecoveryStatus.MESSAGE_SENT;
+      } else {
+        finalStatus = RecoveryStatus.FAILED;
+      }
+
+      const finalRecovery = await db.recoveryAction.update({
+        where: {
+          id: recoveryId,
+        },
+        data: {
+          status: finalStatus,
+        },
+      });
+
+      const paymentUpdate: {
+        recoveryStatus: RecoveryStatus;
+        retryCount?: {
+          increment: number;
+        };
+      } = {
+        recoveryStatus: finalStatus,
+      };
+
+      if (recoveryType === RecoveryActionType.RETRY_PAYMENT) {
+        paymentUpdate.retryCount = {
+          increment: 1,
+        };
+      }
+
+      await db.payment.update({
+        where: {
+          id: recovery.paymentId,
+        },
+        data: paymentUpdate,
+      });
+
+      await db.auditLog.create({
+        data: {
+          paymentId: recovery.paymentId,
+          actor: AuditActor.AI_AGENT,
+          event:
+            finalStatus === RecoveryStatus.MESSAGE_SENT
+              ? "RECOVERY_MESSAGE_SENT"
+              : "RECOVERY_ATTEMPT_FAILED",
+          action: recoveryType,
+          reason:
+            finalStatus === RecoveryStatus.MESSAGE_SENT
+              ? "Recovery message sent to customer"
+              : "Recovery attempt did not succeed",
+          metadata: JSON.stringify({
+            recoveryId,
+            aiConfidence,
+          }),
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        recovered: false,
+        amountRecovered: 0,
+        recovery: finalRecovery,
+        message:
+          finalStatus === RecoveryStatus.MESSAGE_SENT
+            ? "Recovery message sent"
+            : "Recovery attempt failed",
+      });
     }
 
-    const updatedRecovery = await db.recoveryAction.update({
-      where: {
-        id: actionId,
-      },
-      data: {
-        status: newPaymentStatus,
-        executedAt: new Date(),
-      },
-    });
-
-    await db.payment.update({
-      where: {
-        id: recovery.paymentId,
-      },
-      data: {
-        recoveryStatus: newPaymentStatus,
-      },
-    });
-
-    await db.auditLog.create({
-      data: {
-        paymentId: recovery.paymentId,
-        actor: "MERCHANT",
-        event: "RECOVERY_APPROVED",
-        action: recovery.actionType,
-        reason: "Merchant approved the AI recovery recommendation.",
-        metadata: JSON.stringify({
-          recoveryActionId: actionId,
-          actionType: recovery.actionType,
-        }),
-      },
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: "Recovery action approved.",
-      recovery: updatedRecovery,
-    });
-  } catch (error) {
-    console.error("RECOVERIES POST ERROR:", error);
+    /*
+     * ==========================================
+     * INVALID ACTION
+     * ==========================================
+     */
 
     return NextResponse.json(
       {
         success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to process recovery action.",
+        error: "Invalid action. Use APPROVE or STOP.",
+      },
+      { status: 400 }
+    );
+  } catch (error) {
+    console.error("POST /api/recoveries error:", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to execute recovery action",
       },
       { status: 500 }
     );

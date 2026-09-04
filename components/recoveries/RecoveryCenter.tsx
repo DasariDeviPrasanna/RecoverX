@@ -19,55 +19,136 @@ type Recovery = {
     riskScore: number;
     riskLevel: string;
     recoveryStatus: string;
-  };
+    retryCount: number;
 
-  customer: {
-    name: string;
-    email: string;
-    phone: string | null;
-    language: string;
+    customer: {
+      name: string;
+      email: string;
+      phone: string | null;
+      language: string;
+    };
   };
 };
 
+type AuditLog = {
+  id: string;
+  actor: string;
+  event: string;
+  action: string | null;
+  reason: string | null;
+  createdAt: string;
+};
+
+function money(value: number) {
+  return `₹${Math.round(value).toLocaleString("en-IN")}`;
+}
+
+function getDiagnosis(payment: Recovery["payment"]) {
+  const reason = (payment.failureReason || "").toLowerCase();
+
+  if (reason.includes("insufficient")) {
+    return {
+      title: "Insufficient Funds",
+      description:
+        "The customer's account appears to have insufficient balance. A controlled retry may succeed when funds are available.",
+      probability: 80,
+    };
+  }
+
+  if (reason.includes("timeout")) {
+    return {
+      title: "Bank Timeout",
+      description:
+        "The payment gateway did not receive a timely response from the bank. A retry is likely to succeed.",
+      probability: 75,
+    };
+  }
+
+  if (reason.includes("abandoned")) {
+    return {
+      title: "Payment Abandoned",
+      description:
+        "The customer started the payment flow but did not complete it. A reminder can recover the transaction.",
+      probability: 65,
+    };
+  }
+
+  if (reason.includes("authentication")) {
+    return {
+      title: "Authentication Failed",
+      description:
+        "The payment failed during authentication. Sending a customer message is safer than repeated retries.",
+      probability: 60,
+    };
+  }
+
+  if (reason.includes("declined")) {
+    return {
+      title: "Card Declined",
+      description:
+        "The issuing bank declined the transaction. Customer guidance is recommended instead of aggressive retries.",
+      probability: 45,
+    };
+  }
+
+  return {
+    title: "Payment Failure",
+    description:
+      "The AI agent detected a recoverable payment failure and evaluated the safest next action.",
+    probability: 50,
+  };
+}
+
+function actionLabel(action: string) {
+  switch (action) {
+    case "RETRY_PAYMENT":
+      return "Retry Payment";
+    case "SEND_MESSAGE":
+      return "Send Customer Message";
+    case "SEND_REMINDER":
+      return "Send Reminder";
+    case "ESCALATE":
+      return "Escalate to Merchant";
+    case "STOP":
+      return "Stop Recovery";
+    default:
+      return action;
+  }
+}
+
 export default function RecoveryCenter() {
   const [recoveries, setRecoveries] = useState<Recovery[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
-  async function loadRecoveries() {
+  async function loadData() {
     try {
-      const response = await fetch("/api/recoveries");
+      const response = await fetch("/api/recoveries", {
+        cache: "no-store",
+      });
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(
-          data.error || "Failed to load recoveries."
-        );
-      }
-
       setRecoveries(data.recoveries || []);
-    } catch (error) {
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : "Failed to load recovery actions."
-      );
+      setAuditLogs(data.auditLogs || []);
+    } catch {
+      setMessage("Unable to load recovery data.");
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadRecoveries();
+    loadData();
   }, []);
 
-  async function processRecovery(
-    actionId: string,
+  async function executeRecovery(
+    recoveryId: string,
     action: "APPROVE" | "STOP"
   ) {
-    setProcessing(actionId);
+    setProcessing(recoveryId);
     setMessage("");
 
     try {
@@ -77,7 +158,7 @@ export default function RecoveryCenter() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          actionId,
+          recoveryId,
           action,
         }),
       });
@@ -85,14 +166,16 @@ export default function RecoveryCenter() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data.error || "Failed to process recovery."
-        );
+        throw new Error(data.error || "Recovery failed");
       }
 
-      setMessage(data.message);
+      setMessage(
+        data.recovered
+          ? `${money(data.amountRecovered)} recovered successfully.`
+          : data.message || "Recovery action completed."
+      );
 
-      await loadRecoveries();
+      await loadData();
     } catch (error) {
       setMessage(
         error instanceof Error
@@ -104,271 +187,446 @@ export default function RecoveryCenter() {
     }
   }
 
-  function formatMoney(amount: number) {
-    return `₹${Math.round(amount).toLocaleString("en-IN")}`;
-  }
-
-  function getRiskStyle(level: string) {
-    if (level === "CRITICAL") {
-      return "border-red-500/30 bg-red-500/10 text-red-400";
-    }
-
-    if (level === "HIGH") {
-      return "border-orange-500/30 bg-orange-500/10 text-orange-400";
-    }
-
-    if (level === "MEDIUM") {
-      return "border-yellow-500/30 bg-yellow-500/10 text-yellow-400";
-    }
-
-    return "border-emerald-500/30 bg-emerald-500/10 text-emerald-400";
-  }
-
-  function getActionName(action: string) {
-    if (action === "RETRY_PAYMENT") {
-      return "Retry Payment";
-    }
-
-    if (action === "SEND_MESSAGE") {
-      return "Send Customer Message";
-    }
-
-    if (action === "SEND_REMINDER") {
-      return "Send Payment Reminder";
-    }
-
-    if (action === "ESCALATE") {
-      return "Escalate to Merchant";
-    }
-
-    return action;
-  }
-
   if (loading) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-16 text-center">
-        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
-
-        <p className="text-zinc-400">
-          Loading recovery intelligence...
+      <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-10 text-center">
+        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-violet-500/20 border-t-violet-400" />
+        <p className="text-sm text-zinc-500">
+          AI agent is analyzing recovery opportunities...
         </p>
       </div>
     );
   }
 
-  if (recoveries.length === 0) {
-    return (
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-16 text-center">
-        <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-2xl bg-violet-500/10 text-3xl text-violet-300">
-          ◈
-        </div>
+  const activeRecoveries = recoveries.filter(
+    (item) =>
+      item.status !== "STOPPED" &&
+      item.status !== "RECOVERED"
+  );
 
-        <h2 className="text-2xl font-semibold">
-          No recovery opportunities
-        </h2>
+  const recovered = recoveries.filter(
+    (item) => item.status === "RECOVERED"
+  );
 
-        <p className="mx-auto mt-3 max-w-md text-zinc-500">
-          Add a failed or abandoned payment from the Data Entry
-          page. RecoverX will analyze it and create a recovery
-          recommendation here.
-        </p>
-      </div>
-    );
-  }
+  const totalRecovered = recoveries.reduce(
+    (sum, item) => sum + (item.amountRecovered || 0),
+    0
+  );
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+
+      {/* HEADER */}
+      <div className="rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/[0.08] via-transparent to-cyan-500/[0.04] p-6">
+
+        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+
+          <div>
+            <div className="mb-2 flex items-center gap-2 text-xs font-bold tracking-[0.18em] text-violet-400">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+              AI RECOVERY AGENT
+            </div>
+
+            <h2 className="text-2xl font-bold">
+              Detect → Diagnose → Decide → Recover
+            </h2>
+
+            <p className="mt-2 max-w-2xl text-sm text-zinc-500">
+              RecoverX evaluates failed payments, determines the root cause,
+              selects a bounded recovery strategy, and records every action.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+
+            <div className="rounded-xl border border-white/10 bg-black/20 px-5 py-3 text-center">
+              <div className="text-xl font-bold text-white">
+                {activeRecoveries.length}
+              </div>
+              <div className="text-[10px] uppercase tracking-wider text-zinc-600">
+                Pending
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-emerald-500/10 bg-emerald-500/[0.04] px-5 py-3 text-center">
+              <div className="text-xl font-bold text-emerald-400">
+                {money(totalRecovered)}
+              </div>
+              <div className="text-[10px] uppercase tracking-wider text-zinc-600">
+                Recovered
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {/* SUCCESS MESSAGE */}
 
       {message && (
-        <div className="rounded-xl border border-violet-500/20 bg-violet-500/10 px-5 py-4 text-sm text-violet-300">
-          {message}
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-5 py-4 text-sm text-emerald-300">
+          ✓ {message}
         </div>
       )}
 
-      {recoveries.map((recovery) => {
-        const amount = Number(recovery.payment.amount);
+      {/* RECOVERY CARDS */}
 
-        const probability =
-          recovery.payment.riskLevel === "CRITICAL"
-            ? 55
-            : recovery.payment.riskLevel === "HIGH"
-            ? 80
-            : 65;
+      {recoveries.length === 0 ? (
+        <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-12 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-violet-500/20 bg-violet-500/10 text-2xl text-violet-300">
+            ◈
+          </div>
 
-        const completed =
-          recovery.status === "STOPPED" ||
-          recovery.status === "RECOVERED";
+          <h3 className="text-lg font-semibold">
+            No recovery opportunities
+          </h3>
 
-        return (
-          <div
-            key={recovery.id}
-            className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] transition duration-300 hover:border-violet-500/30"
-          >
-            <div className="p-6">
+          <p className="mt-2 text-sm text-zinc-500">
+            Add failed payments to activate the recovery agent.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-5">
 
-              {/* Top */}
-              <div className="flex flex-col gap-6 lg:flex-row lg:justify-between">
+          {recoveries.map((recovery) => {
+            const payment = recovery.payment;
+            const diagnosis = getDiagnosis(payment);
 
-                {/* Customer */}
-                <div className="flex-1">
+            const isRecovered = recovery.status === "RECOVERED";
+            const isStopped = recovery.status === "STOPPED";
+            const isProcessing = processing === recovery.id;
 
-                  <div className="mb-4 flex flex-wrap items-center gap-3">
+            const confidence =
+              recovery.aiConfidence ?? 85;
 
-                    <span
-                      className={`rounded-full border px-3 py-1 text-xs font-semibold ${getRiskStyle(
-                        recovery.payment.riskLevel
-                      )}`}
-                    >
-                      {recovery.payment.riskLevel} RISK
-                    </span>
+            return (
+              <div
+                key={recovery.id}
+                className={`overflow-hidden rounded-2xl border bg-white/[0.02] transition ${
+                  isRecovered
+                    ? "border-emerald-500/20"
+                    : isStopped
+                    ? "border-zinc-800"
+                    : "border-white/10 hover:border-violet-500/20"
+                }`}
+              >
 
-                    <span className="text-sm text-zinc-600">
-                      Risk Score{" "}
-                      {recovery.payment.riskScore}/100
-                    </span>
+                {/* TOP */}
 
-                  </div>
+                <div className="border-b border-white/5 p-6">
 
-                  <h2 className="text-2xl font-semibold text-white">
-                    {recovery.customer.name}
-                  </h2>
+                  <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
 
-                  <p className="mt-1 text-sm text-zinc-500">
-                    {recovery.customer.email}
-                  </p>
+                    <div className="flex items-center gap-4">
 
-                  {/* Metrics */}
-                  <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                      <div
+                        className={`flex h-12 w-12 items-center justify-center rounded-xl text-xl ${
+                          isRecovered
+                            ? "bg-emerald-500/10 text-emerald-400"
+                            : isStopped
+                            ? "bg-zinc-500/10 text-zinc-500"
+                            : "bg-orange-500/10 text-orange-400"
+                        }`}
+                      >
+                        {isRecovered
+                          ? "✓"
+                          : isStopped
+                          ? "■"
+                          : "!"
+                        }
+                      </div>
 
-                    <div className="rounded-xl bg-black/20 p-4">
-                      <p className="text-xs text-zinc-600">
-                        Amount
-                      </p>
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
 
-                      <p className="mt-1 text-xl font-bold">
-                        {formatMoney(amount)}
-                      </p>
+                          <h3 className="font-semibold text-white">
+                            {payment.customer.name}
+                          </h3>
+
+                          <span className="rounded-full border border-orange-500/20 bg-orange-500/10 px-2 py-0.5 text-[9px] font-bold uppercase text-orange-300">
+                            {payment.riskLevel}
+                          </span>
+
+                        </div>
+
+                        <p className="mt-1 text-xs text-zinc-600">
+                          {payment.customer.email}
+                        </p>
+
+                      </div>
+
                     </div>
 
-                    <div className="rounded-xl bg-black/20 p-4">
-                      <p className="text-xs text-zinc-600">
-                        Recovery Probability
-                      </p>
+                    <div className="text-left lg:text-right">
 
-                      <p className="mt-1 text-xl font-bold text-cyan-400">
-                        {probability}%
-                      </p>
-                    </div>
+                      <div className="text-2xl font-bold">
+                        {money(payment.amount)}
+                      </div>
 
-                    <div className="rounded-xl bg-black/20 p-4">
-                      <p className="text-xs text-zinc-600">
-                        AI Confidence
-                      </p>
+                      <div className="text-xs text-zinc-600">
+                        Attempt #{recovery.attemptNumber}
+                      </div>
 
-                      <p className="mt-1 text-xl font-bold text-violet-300">
-                        {recovery.aiConfidence ?? 0}%
-                      </p>
                     </div>
 
                   </div>
                 </div>
 
-                {/* AI Recommendation */}
-                <div className="w-full rounded-2xl border border-violet-500/20 bg-violet-500/[0.05] p-5 lg:max-w-md">
+                {/* AI ANALYSIS */}
 
-                  <p className="text-xs font-semibold uppercase tracking-wider text-violet-400">
-                    AI Recommendation
-                  </p>
+                <div className="grid gap-0 lg:grid-cols-3">
 
-                  <h3 className="mt-2 text-lg font-semibold">
-                    {getActionName(
-                      recovery.actionType
+                  {/* DIAGNOSIS */}
+
+                  <div className="border-b border-white/5 p-6 lg:border-b-0 lg:border-r">
+
+                    <div className="mb-3 text-[10px] font-bold tracking-[0.18em] text-zinc-600">
+                      AI DIAGNOSIS
+                    </div>
+
+                    <h4 className="font-semibold text-orange-300">
+                      {diagnosis.title}
+                    </h4>
+
+                    <p className="mt-2 text-sm leading-6 text-zinc-500">
+                      {diagnosis.description}
+                    </p>
+
+                    <div className="mt-5">
+
+                      <div className="mb-2 flex justify-between text-xs">
+                        <span className="text-zinc-600">
+                          Recovery probability
+                        </span>
+
+                        <span className="font-semibold text-emerald-400">
+                          {diagnosis.probability}%
+                        </span>
+                      </div>
+
+                      <div className="h-2 overflow-hidden rounded-full bg-white/5">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-violet-500 to-emerald-400"
+                          style={{
+                            width: `${diagnosis.probability}%`,
+                          }}
+                        />
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                  {/* DECISION */}
+
+                  <div className="border-b border-white/5 p-6 lg:border-b-0 lg:border-r">
+
+                    <div className="mb-3 text-[10px] font-bold tracking-[0.18em] text-zinc-600">
+                      AI DECISION
+                    </div>
+
+                    <div className="rounded-xl border border-violet-500/15 bg-violet-500/[0.05] p-4">
+
+                      <div className="text-xs text-zinc-500">
+                        Recommended action
+                      </div>
+
+                      <div className="mt-2 font-semibold text-violet-300">
+                        {actionLabel(recovery.actionType)}
+                      </div>
+
+                      <div className="mt-4 flex items-center justify-between">
+
+                        <span className="text-xs text-zinc-600">
+                          AI confidence
+                        </span>
+
+                        <span className="font-bold text-white">
+                          {confidence}%
+                        </span>
+
+                      </div>
+
+                    </div>
+
+                    <p className="mt-3 text-xs leading-5 text-zinc-600">
+                      {recovery.reason ||
+                        "Selected using risk, failure reason, retry history and recovery probability."}
+                    </p>
+
+                  </div>
+
+                  {/* GOVERNANCE */}
+
+                  <div className="p-6">
+
+                    <div className="mb-3 text-[10px] font-bold tracking-[0.18em] text-zinc-600">
+                      GOVERNANCE
+                    </div>
+
+                    <div className="space-y-3 text-sm">
+
+                      <div className="flex justify-between">
+                        <span className="text-zinc-600">
+                          Risk score
+                        </span>
+
+                        <span className="font-semibold text-orange-300">
+                          {payment.riskScore}/100
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-zinc-600">
+                          Previous retries
+                        </span>
+
+                        <span className="text-zinc-300">
+                          {payment.retryCount}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-zinc-600">
+                          Customer language
+                        </span>
+
+                        <span className="text-zinc-300">
+                          {payment.customer.language}
+                        </span>
+                      </div>
+
+                    </div>
+
+                    {!isRecovered && !isStopped && (
+                      <div className="mt-6 flex gap-2">
+
+                        <button
+                          disabled={isProcessing}
+                          onClick={() =>
+                            executeRecovery(
+                              recovery.id,
+                              "APPROVE"
+                            )
+                          }
+                          className="flex-1 rounded-xl bg-violet-600 px-4 py-3 text-xs font-bold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isProcessing
+                            ? "Executing..."
+                            : "Approve & Execute"}
+                        </button>
+
+                        <button
+                          disabled={isProcessing}
+                          onClick={() =>
+                            executeRecovery(
+                              recovery.id,
+                              "STOP"
+                            )
+                          }
+                          className="rounded-xl border border-white/10 px-4 py-3 text-xs font-semibold text-zinc-400 transition hover:bg-white/5 hover:text-white disabled:opacity-50"
+                        >
+                          Stop
+                        </button>
+
+                      </div>
                     )}
-                  </h3>
 
-                  <p className="mt-3 text-sm leading-6 text-zinc-400">
-                    {recovery.reason ||
-                      "RecoverX selected this action based on the payment risk profile."}
-                  </p>
+                    {isRecovered && (
+                      <div className="mt-6 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] p-4 text-center">
 
-                  <div className="mt-5 border-t border-white/10 pt-4">
+                        <div className="text-lg font-bold text-emerald-400">
+                          {money(recovery.amountRecovered)}
+                        </div>
 
-                    <p className="text-xs text-zinc-600">
-                      Failure reason
-                    </p>
+                        <div className="mt-1 text-[10px] uppercase tracking-wider text-emerald-500/70">
+                          Payment recovered
+                        </div>
 
-                    <p className="mt-1 text-sm text-zinc-300">
-                      {recovery.payment.failureReason ||
-                        "Unknown"}
-                    </p>
+                      </div>
+                    )}
+
+                    {isStopped && (
+                      <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.02] p-4 text-center text-xs text-zinc-600">
+                        Recovery stopped by merchant
+                      </div>
+                    )}
 
                   </div>
 
                 </div>
+
+              </div>
+            );
+          })}
+
+        </div>
+      )}
+
+      {/* AUDIT PREVIEW */}
+
+      {auditLogs.length > 0 && (
+        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6">
+
+          <div className="mb-5 flex items-center justify-between">
+
+            <div>
+              <div className="text-[10px] font-bold tracking-[0.18em] text-orange-400">
+                GOVERNANCE
               </div>
 
-              {/* Bottom */}
-              <div className="mt-6 flex flex-col gap-4 border-t border-white/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
+              <h3 className="mt-1 text-lg font-semibold">
+                Recent Agent Activity
+              </h3>
+            </div>
+
+            <a
+              href="/audit"
+              className="text-xs text-violet-400 hover:text-violet-300"
+            >
+              View full audit →
+            </a>
+
+          </div>
+
+          <div className="space-y-3">
+
+            {auditLogs.slice(0, 4).map((log) => (
+              <div
+                key={log.id}
+                className="flex flex-col gap-2 rounded-xl border border-white/5 bg-white/[0.015] p-4 md:flex-row md:items-center md:justify-between"
+              >
 
                 <div>
-                  <p className="text-xs text-zinc-600">
-                    Recovery Status
-                  </p>
+                  <div className="text-sm font-semibold text-zinc-300">
+                    {log.event}
+                  </div>
 
-                  <p className="mt-1 text-sm font-medium text-zinc-300">
-                    {recovery.status}
-                  </p>
+                  <div className="mt-1 text-xs text-zinc-600">
+                    {log.reason || "Agent activity recorded"}
+                  </div>
                 </div>
 
-                {!completed ? (
-                  <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="flex items-center gap-3">
 
-                    <button
-                      type="button"
-                      disabled={
-                        processing === recovery.id
-                      }
-                      onClick={() =>
-                        processRecovery(
-                          recovery.id,
-                          "STOP"
-                        )
-                      }
-                      className="rounded-xl border border-red-500/20 px-5 py-3 text-sm font-medium text-red-400 transition hover:bg-red-500/10 disabled:opacity-50"
-                    >
-                      Stop Recovery
-                    </button>
+                  <span className="rounded-full border border-violet-500/10 bg-violet-500/5 px-2 py-1 text-[9px] font-bold text-violet-300">
+                    {log.actor}
+                  </span>
 
-                    <button
-                      type="button"
-                      disabled={
-                        processing === recovery.id
-                      }
-                      onClick={() =>
-                        processRecovery(
-                          recovery.id,
-                          "APPROVE"
-                        )
-                      }
-                      className="rounded-xl bg-violet-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {processing === recovery.id
-                        ? "Processing..."
-                        : "Approve Recovery →"}
-                    </button>
+                  <span className="text-[10px] text-zinc-700">
+                    {new Date(log.createdAt).toLocaleString("en-IN")}
+                  </span>
 
-                  </div>
-                ) : (
-                  <div className="rounded-xl border border-white/10 px-5 py-3 text-sm text-zinc-500">
-                    Action completed
-                  </div>
-                )}
+                </div>
 
               </div>
-            </div>
+            ))}
+
           </div>
-        );
-      })}
+
+        </div>
+      )}
+
     </div>
   );
 }
