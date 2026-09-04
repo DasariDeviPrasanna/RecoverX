@@ -1,5 +1,9 @@
 import Link from "next/link";
 import { getDashboardData } from "@/lib/dashboard";
+import Topbar from "@/components/layout/Topbar";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 function formatMoney(value: number) {
   return `₹${Math.round(value).toLocaleString("en-IN")}`;
@@ -156,10 +160,13 @@ export default async function DashboardPage() {
 
         </nav>
 
-        {/* Bottom sidebar */}
+        {/* ======================================================= */}
+        {/* SIDEBAR BOTTOM                                         */}
+        {/* ======================================================= */}
+
         <div className="border-t border-white/10 p-4">
 
-          {/* Agent status */}
+          {/* Agent Status */}
           <div className="mb-3 rounded-xl border border-emerald-500/10 bg-emerald-500/[0.04] p-3">
 
             <div className="flex items-center gap-3">
@@ -171,6 +178,7 @@ export default async function DashboardPage() {
               </div>
 
               <div>
+
                 <div className="text-xs font-semibold text-emerald-300">
                   Agent Online
                 </div>
@@ -178,13 +186,14 @@ export default async function DashboardPage() {
                 <div className="text-[10px] text-zinc-600">
                   Monitoring revenue
                 </div>
+
               </div>
 
             </div>
 
           </div>
 
-          {/* Merchant profile */}
+          {/* Merchant Profile */}
           <div className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-3">
 
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 text-xs font-bold">
@@ -213,84 +222,11 @@ export default async function DashboardPage() {
 
       </aside>
 
-
       {/* ========================================================= */}
       {/* TOP BAR                                                    */}
       {/* ========================================================= */}
 
-      <header className="fixed left-0 right-0 top-0 z-40 hidden h-[76px] items-center justify-between border-b border-white/10 bg-[#08070D]/90 px-6 backdrop-blur-xl lg:flex lg:left-[270px]">
-
-        {/* Search */}
-        <div className="flex w-[340px] items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5">
-
-          <span className="text-lg text-zinc-600">
-            ⌕
-          </span>
-
-          <span className="text-sm text-zinc-600">
-            Search payments, customers...
-          </span>
-
-          <span className="ml-auto rounded-md border border-white/10 px-1.5 py-0.5 text-[9px] text-zinc-600">
-            /
-          </span>
-
-        </div>
-
-        {/* Right controls */}
-        <div className="flex items-center gap-3">
-
-          <div className="flex items-center gap-2 rounded-lg border border-emerald-500/10 bg-emerald-500/[0.04] px-3 py-2">
-
-            <span className="text-emerald-400">
-              ✓
-            </span>
-
-            <span className="text-xs text-emerald-300">
-              Razorpay Test Mode
-            </span>
-
-          </div>
-
-          <button className="rounded-xl p-2.5 text-zinc-500 transition hover:bg-white/5 hover:text-white">
-            ?
-          </button>
-
-          <button className="relative rounded-xl p-2.5 text-zinc-500 transition hover:bg-white/5 hover:text-white">
-            ♢
-
-            <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-violet-400" />
-          </button>
-
-          {/* Profile */}
-          <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
-
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 text-[10px] font-bold">
-              PD
-            </div>
-
-            <div className="hidden sm:block">
-
-              <div className="text-xs font-semibold text-zinc-200">
-                Prasanna Dasari
-              </div>
-
-              <div className="text-[10px] text-zinc-600">
-                Merchant Admin
-              </div>
-
-            </div>
-
-            <span className="text-xs text-zinc-600">
-              ▾
-            </span>
-
-          </div>
-
-        </div>
-
-      </header>
-
+      <Topbar />
 
       {/* ========================================================= */}
       {/* MAIN CONTENT                                               */}
@@ -314,10 +250,13 @@ export default async function DashboardPage() {
               </div>
 
               <h1 className="text-4xl font-bold tracking-tight">
+
                 Revenue Recovery{" "}
+
                 <span className="text-zinc-600">
                   Center
                 </span>
+
               </h1>
 
               <p className="mt-3 max-w-2xl text-zinc-400">
@@ -335,7 +274,6 @@ export default async function DashboardPage() {
             </Link>
 
           </div>
-
 
           {/* ===================================================== */}
           {/* METRICS                                                */}
@@ -389,7 +327,6 @@ export default async function DashboardPage() {
 
           </div>
 
-
           {/* ===================================================== */}
           {/* MAIN PANELS                                            */}
           {/* ===================================================== */}
@@ -402,6 +339,7 @@ export default async function DashboardPage() {
               <div className="mb-8 flex items-start justify-between">
 
                 <div>
+
                   <h2 className="text-xl font-semibold">
                     Revenue Recovery
                   </h2>
@@ -409,6 +347,7 @@ export default async function DashboardPage() {
                   <p className="mt-1 text-sm text-zinc-500">
                     Recovery performance from merchant data
                   </p>
+
                 </div>
 
                 <div className="rounded-lg border border-violet-500/10 bg-violet-500/5 px-3 py-2 text-xs text-violet-300">
@@ -447,9 +386,15 @@ export default async function DashboardPage() {
                     </div>
 
                     <div className="mt-3 flex justify-between text-xs text-zinc-600">
+
                       <span>₹0 recovered</span>
-                      <span>{data.recoveryRate.toFixed(1)}%</span>
+
+                      <span>
+                        {data.recoveryRate.toFixed(1)}%
+                      </span>
+
                       <span>100%</span>
+
                     </div>
 
                   </div>
@@ -459,19 +404,21 @@ export default async function DashboardPage() {
 
             </section>
 
-
             {/* AI Agent */}
             <section className="overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/[0.08] via-transparent to-cyan-500/[0.04] p-6">
 
               <div className="mb-8 flex items-center gap-3">
 
                 <div className="relative flex h-12 w-12 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/10 text-xl text-violet-300">
+
                   ◈
 
                   <span className="absolute -right-1 -top-1 h-2.5 w-2.5 animate-pulse rounded-full bg-emerald-400" />
+
                 </div>
 
                 <div>
+
                   <h2 className="font-semibold">
                     Recovery Agent
                   </h2>
@@ -479,10 +426,10 @@ export default async function DashboardPage() {
                   <p className="text-sm text-emerald-400">
                     ● {hasData ? "Analyzing data" : "Waiting for data"}
                   </p>
+
                 </div>
 
               </div>
-
 
               <AgentStep
                 number="01"
@@ -532,7 +479,6 @@ export default async function DashboardPage() {
             </section>
 
           </div>
-
 
           {/* ===================================================== */}
           {/* QUICK INTELLIGENCE                                     */}
@@ -598,9 +544,8 @@ export default async function DashboardPage() {
 
           </section>
 
-
           {/* ===================================================== */}
-          {/* FOOTER STATUS                                          */}
+          {/* FOOTER                                                 */}
           {/* ===================================================== */}
 
           <div className="mt-8 flex flex-col justify-between gap-3 border-t border-white/5 pt-5 text-[11px] text-zinc-600 sm:flex-row">
@@ -616,8 +561,11 @@ export default async function DashboardPage() {
               </span>
 
               <span className="flex items-center gap-1.5 text-emerald-500/70">
+
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+
                 Systems operational
+
               </span>
 
             </div>
@@ -634,7 +582,7 @@ export default async function DashboardPage() {
 
 
 /* =============================================================== */
-/* COMPONENTS                                                       */
+/* METRIC CARD                                                     */
 /* =============================================================== */
 
 function MetricCard({
@@ -648,6 +596,7 @@ function MetricCard({
   description: string;
   accent: "orange" | "violet" | "emerald" | "cyan";
 }) {
+
   const accentClasses = {
     orange: "hover:border-orange-500/30",
     violet: "hover:border-violet-500/30",
@@ -666,6 +615,7 @@ function MetricCard({
     <div
       className={`group rounded-2xl border border-white/10 bg-white/[0.025] p-6 transition duration-300 hover:-translate-y-1 hover:bg-white/[0.045] ${accentClasses[accent]}`}
     >
+
       <p className="text-sm text-zinc-500">
         {title}
       </p>
@@ -679,10 +629,15 @@ function MetricCard({
       <p className="mt-2 text-xs text-zinc-600">
         {description}
       </p>
+
     </div>
   );
 }
 
+
+/* =============================================================== */
+/* EMPTY STATE                                                      */
+/* =============================================================== */
 
 function EmptyState() {
   return (
@@ -705,6 +660,10 @@ function EmptyState() {
 }
 
 
+/* =============================================================== */
+/* AGENT STEP                                                       */
+/* =============================================================== */
+
 function AgentStep({
   number,
   title,
@@ -718,6 +677,7 @@ function AgentStep({
   active: boolean;
   last?: boolean;
 }) {
+
   return (
     <div className="relative mb-5 flex items-center gap-4">
 
@@ -752,6 +712,10 @@ function AgentStep({
 }
 
 
+/* =============================================================== */
+/* INFO BOX                                                         */
+/* =============================================================== */
+
 function InfoBox({
   title,
   value,
@@ -763,6 +727,7 @@ function InfoBox({
   description: string;
   accent: "cyan" | "orange" | "rose";
 }) {
+
   const styles = {
     cyan: "border-cyan-500/10 bg-cyan-500/[0.025]",
     orange: "border-orange-500/10 bg-orange-500/[0.025]",
@@ -773,6 +738,7 @@ function InfoBox({
     <div
       className={`rounded-2xl border p-5 transition duration-300 hover:-translate-y-0.5 ${styles[accent]}`}
     >
+
       <p className="text-sm text-zinc-500">
         {title}
       </p>
@@ -784,6 +750,7 @@ function InfoBox({
       <p className="mt-1 text-xs text-zinc-600">
         {description}
       </p>
+
     </div>
   );
 }
