@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-
+import BackToOverview from "@/components/layout/BackToOverview";
+<BackToOverview />
 export default function SettingsPage() {
   const [automaticRecovery, setAutomaticRecovery] = useState(true);
   const [humanApproval, setHumanApproval] = useState(true);
