@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function PaymentForm() {
+  const router = useRouter();
+
   const [form, setForm] = useState({
     customerName: "",
     email: "",
@@ -62,50 +65,48 @@ export default function PaymentForm() {
           language: form.language,
         }),
       });
+
       const text = await response.text();
 
-let data: { error?: string };
+      let data: {
+        error?: string;
+        success?: boolean;
+      };
 
-try {
-  data = text ? JSON.parse(text) : {};
-} catch {
-  throw new Error(
-    `Server returned an invalid response (${response.status})`
-  );
-}
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        throw new Error(
+          `Server returned an invalid response (${response.status})`
+        );
+      }
 
-if (!response.ok) {
-  throw new Error(data.error || "Failed to add payment");
-}
-      
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to add payment");
+      }
 
-      setMessage("Payment added successfully!");
+      // Payment successfully saved
+      setMessage("Payment added successfully! Analyzing...");
 
-      setForm({
-        customerName: "",
-        email: "",
-        phone: "",
-        amount: "",
-        status: "FAILED",
-        failureReason: "Insufficient funds",
-        dueDate: "",
-        retryCount: "0",
-        language: "English",
-      });
+      // Give the success message a moment to appear
+      setTimeout(() => {
+        router.push("/agent");
+      }, 500);
     } catch (error) {
+      console.error("PAYMENT FORM ERROR:", error);
+
       setMessage(
         error instanceof Error
           ? error.message
-          : "Something went wrong."
+          : "Something went wrong while adding the payment."
       );
-    } finally {
+
       setLoading(false);
     }
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-
       {/* Customer Information */}
       <div>
         <h2 className="text-xl font-semibold text-white">
@@ -117,7 +118,6 @@ if (!response.ok) {
         </p>
 
         <div className="mt-5 grid gap-5 md:grid-cols-2">
-
           <Field
             label="Customer Name"
             name="customerName"
@@ -161,7 +161,6 @@ if (!response.ok) {
               <option value="Telugu">Telugu</option>
             </select>
           </div>
-
         </div>
       </div>
 
@@ -176,7 +175,6 @@ if (!response.ok) {
         </p>
 
         <div className="mt-5 grid gap-5 md:grid-cols-2">
-
           <Field
             label="Payment Amount (₹)"
             name="amount"
@@ -219,21 +217,15 @@ if (!response.ok) {
               <option value="Insufficient funds">
                 Insufficient funds
               </option>
-              <option value="Card declined">
-                Card declined
-              </option>
-              <option value="Bank timeout">
-                Bank timeout
-              </option>
+              <option value="Card declined">Card declined</option>
+              <option value="Bank timeout">Bank timeout</option>
               <option value="Authentication failed">
                 Authentication failed
               </option>
               <option value="Payment abandoned">
                 Payment abandoned
               </option>
-              <option value="Unknown">
-                Unknown
-              </option>
+              <option value="Unknown">Unknown</option>
             </select>
           </div>
 
@@ -255,7 +247,6 @@ if (!response.ok) {
             value={form.retryCount}
             onChange={handleChange}
           />
-
         </div>
       </div>
 
@@ -278,7 +269,7 @@ if (!response.ok) {
         disabled={loading}
         className="w-full rounded-xl bg-violet-600 px-6 py-4 font-semibold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {loading ? "Adding Payment..." : "Add Payment & Analyze →"}
+        {loading ? "Analyzing Payment..." : "Add Payment & Analyze →"}
       </button>
 
       <p className="text-center text-xs text-zinc-600">
