@@ -16,15 +16,19 @@ export default function Topbar() {
 
   const [profileOpen, setProfileOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+
   const [userName, setUserName] = useState("Prasanna Dasari");
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
     const name = localStorage.getItem("recoverx_user_name");
     const photo = localStorage.getItem("recoverx_user_photo");
+    const email = localStorage.getItem("recoverx_user_email");
 
     if (name) setUserName(name);
     if (photo) setUserPhoto(photo);
+    if (email) setUserEmail(email);
   }, []);
 
   async function handleLogout() {
@@ -56,11 +60,22 @@ export default function Topbar() {
 
   return (
     <>
+      {/* =========================
+          TOP BAR
+      ========================== */}
       <header className="sticky top-0 z-40 flex h-20 items-center justify-end border-b border-white/[0.07] bg-[#07111F]/95 px-6 backdrop-blur-xl lg:px-8">
         <div className="flex items-center gap-3">
 
-          {/* HELP */}
+          {/* USER EMAIL */}
+          {userEmail && (
+            <div className="hidden items-center rounded-xl border border-white/[0.08] bg-white/[0.035] px-4 py-2 sm:flex">
+              <span className="max-w-[220px] truncate text-sm text-slate-300">
+                {userEmail}
+              </span>
+            </div>
+          )}
 
+          {/* HELP */}
           <button
             type="button"
             aria-label="Open RecoverX Help"
@@ -71,7 +86,6 @@ export default function Topbar() {
           </button>
 
           {/* PROFILE */}
-
           <div className="relative">
             <button
               type="button"
@@ -80,6 +94,7 @@ export default function Topbar() {
               onClick={toggleProfile}
               className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 transition hover:border-cyan-400/25 hover:bg-white/[0.06]"
             >
+              {/* PROFILE IMAGE */}
               {userPhoto ? (
                 <img
                   src={userPhoto}
@@ -92,6 +107,7 @@ export default function Topbar() {
                 </div>
               )}
 
+              {/* PROFILE NAME */}
               <div className="hidden text-left sm:block">
                 <p className="max-w-[150px] truncate text-sm font-semibold text-white">
                   {userName}
@@ -102,6 +118,7 @@ export default function Topbar() {
                 </p>
               </div>
 
+              {/* ARROW */}
               <ChevronDown
                 className={`h-4 w-4 text-slate-500 transition-transform ${
                   profileOpen ? "rotate-180" : ""
@@ -109,21 +126,30 @@ export default function Topbar() {
               />
             </button>
 
-            {/* PROFILE DROPDOWN */}
-
+            {/* =========================
+                PROFILE DROPDOWN
+            ========================== */}
             {profileOpen && (
-              <div className="absolute right-0 top-[calc(100%+10px)] z-[80] w-56 overflow-hidden rounded-xl border border-white/10 bg-[#0D1B2A] p-1.5 shadow-2xl shadow-black/50">
+              <div className="absolute right-0 top-[calc(100%+10px)] z-[80] w-64 overflow-hidden rounded-xl border border-white/10 bg-[#0D1B2A] p-1.5 shadow-2xl shadow-black/50">
 
+                {/* PROFILE DETAILS */}
                 <div className="border-b border-white/10 px-3 py-3">
                   <p className="text-sm font-semibold text-white">
                     {userName}
                   </p>
 
-                  <p className="mt-1 text-xs text-slate-500">
+                  {userEmail && (
+                    <p className="mt-1 truncate text-xs text-slate-400">
+                      {userEmail}
+                    </p>
+                  )}
+
+                  <p className="mt-1 text-[11px] text-slate-500">
                     Merchant Admin
                   </p>
                 </div>
 
+                {/* LOGOUT */}
                 <button
                   type="button"
                   onClick={handleLogout}
@@ -138,8 +164,9 @@ export default function Topbar() {
         </div>
       </header>
 
-      {/* HELP MODAL */}
-
+      {/* =========================
+          HELP MODAL
+      ========================== */}
       {helpOpen && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-5 backdrop-blur-sm"
@@ -152,7 +179,6 @@ export default function Topbar() {
           <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-[#0D1B2A] shadow-2xl shadow-black/60">
 
             {/* HEADER */}
-
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
               <div className="flex items-center gap-3">
 
@@ -182,7 +208,6 @@ export default function Topbar() {
             </div>
 
             {/* CONTENT */}
-
             <div className="max-h-[70vh] overflow-y-auto p-6">
 
               <div className="grid gap-4 md:grid-cols-2">
@@ -208,6 +233,7 @@ export default function Topbar() {
                 />
               </div>
 
+              {/* RECOVERY FLOW */}
               <div className="mt-5 rounded-xl border border-cyan-400/10 bg-cyan-400/[0.035] p-5">
                 <p className="text-xs font-semibold uppercase tracking-widest text-cyan-400">
                   Recovery Flow
@@ -240,12 +266,14 @@ export default function Topbar() {
                 </div>
               </div>
 
+              {/* QUICK GUIDE */}
               <div className="mt-5">
                 <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
                   Quick Guide
                 </p>
 
                 <div className="mt-3 space-y-2">
+
                   <GuideRow
                     number="01"
                     title="Overview"
@@ -275,13 +303,14 @@ export default function Topbar() {
                     title="Audit Trail"
                     description="Review approvals, actions and recovery events."
                   />
+
                 </div>
               </div>
             </div>
 
             {/* FOOTER */}
-
             <div className="flex items-center justify-between border-t border-white/10 bg-white/[0.015] px-6 py-4">
+
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />
 
@@ -297,6 +326,7 @@ export default function Topbar() {
               >
                 Got it
               </button>
+
             </div>
           </div>
         </div>
@@ -304,6 +334,10 @@ export default function Topbar() {
     </>
   );
 }
+
+/* =========================
+   HELP CARD
+========================= */
 
 function HelpCard({
   title,
@@ -314,6 +348,7 @@ function HelpCard({
 }) {
   return (
     <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
+
       <h3 className="text-sm font-semibold text-white">
         {title}
       </h3>
@@ -321,9 +356,14 @@ function HelpCard({
       <p className="mt-2 text-xs leading-5 text-slate-400">
         {text}
       </p>
+
     </div>
   );
 }
+
+/* =========================
+   GUIDE ROW
+========================= */
 
 function GuideRow({
   number,
@@ -336,6 +376,7 @@ function GuideRow({
 }) {
   return (
     <div className="flex gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+
       <span className="font-mono text-xs text-cyan-400">
         {number}
       </span>
@@ -349,6 +390,7 @@ function GuideRow({
           {description}
         </p>
       </div>
+
     </div>
   );
 }
