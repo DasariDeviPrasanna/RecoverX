@@ -4,8 +4,6 @@ import { getCurrentUser } from "./current-user";
 export async function getDashboardData() {
   const user = await getCurrentUser();
 
-  // No authenticated merchant = empty dashboard.
-  // Never fall back to global database data.
   if (!user) {
     return {
       totalPayments: 0,
@@ -19,9 +17,11 @@ export async function getDashboardData() {
     };
   }
 
+  const userId = user.id;
+
   const payments = await db.payment.findMany({
     where: {
-      userId: user.id,
+      userId,
     },
     include: {
       customer: true,
@@ -34,64 +34,88 @@ export async function getDashboardData() {
 
   const totalPayments = payments.length;
 
-  // Payments that represent money currently at risk
+  /*
+   * Payments currently requiring recovery.
+   *
+   * SUCCESS / REFUNDED payments are no longer at risk.
+   * STOPPED payments have been intentionally closed.
+   */
   const riskyPayments = payments.filter(
     (payment) =>
-      payment.status === "FAILED" ||
-      payment.status === "ABANDONED"
+      payment.status !== "SUCCESS" &&
+      payment.status !== "REFUNDED" &&
+      payment.recoveryStatus !== "STOPPED"
   );
-
-  // Successfully recovered payments
-  const recoveredPayments = payments.filter(
-    (payment) => payment.recoveryStatus === "RECOVERED"
-  );
-
-  // Total money currently at risk
-  const revenueAtRisk = riskyPayments.reduce(
-    (total, payment) => total + Number(payment.amount),
-    0
-  );
-
-  // Total money recovered
-  const recoveredRevenue = recoveredPayments.reduce(
-    (total, payment) => total + Number(payment.amount),
-    0
-  );
-
-  // Estimated recovery potential
-  const recoveryPotential = riskyPayments
-    .filter((payment) => payment.recoveryStatus !== "STOPPED")
-    .reduce(
-      (total, payment) => total + Number(payment.amount) * 0.8,
-      0
-    );
 
   /*
-   * Recovery rate should use the total recovery opportunity,
-   * including money that has already been recovered.
+   * Successfully recovered payments.
+   */
+  const recoveredPayments = payments.filter(
+    (payment) =>
+      payment.recoveryStatus === "RECOVERED"
+  );
+
+  /*
+   * Revenue currently at risk.
+   */
+  const revenueAtRisk = riskyPayments.reduce(
+    (total, payment) =>
+      total + Number(payment.amount),
+    0
+  );
+
+  /*
+   * Revenue recovered.
+   */
+  const recoveredRevenue = recoveredPayments.reduce(
+    (total, payment) =>
+      total + Number(payment.amount),
+    0
+  );
+
+  /*
+   * Estimated recovery potential.
+   *
+   * 80% is the current RecoverX simulation assumption.
+   */
+  const recoveryPotential = riskyPayments.reduce(
+    (total, payment) =>
+      total + Number(payment.amount) * 0.8,
+    0
+  );
+
+  /*
+   * Recovery rate.
    *
    * Example:
-   * ₹10,000 recovered + ₹5,000 still at risk
-   * = ₹15,000 total opportunity
-   * = 66.7% recovery rate
+   * ₹80,000 recovered
+   * ₹20,000 still at risk
+   *
+   * Recovery rate = 80%
    */
-  const recoveryBase = recoveredRevenue + revenueAtRisk;
+  const recoveryBase =
+    recoveredRevenue + revenueAtRisk;
 
   const recoveryRate =
     recoveryBase > 0
       ? (recoveredRevenue / recoveryBase) * 100
       : 0;
 
-  // High and critical risk payments
+  /*
+   * High and critical risk payments.
+   */
   const highRiskPayments = payments.filter(
     (payment) =>
       payment.riskLevel === "HIGH" ||
       payment.riskLevel === "CRITICAL"
   );
 
-  // Number of recovery actions
+  /*
+   * Total AI recovery actions for this merchant.
+   */
   const aiActions = payments.reduce(
-    (total, payment) => total + payment.recoveries.length,
+    (total, payment) =>
+      total + payment.recoveries.length,
     0
   );
 
