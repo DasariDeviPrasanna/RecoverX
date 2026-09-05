@@ -6,34 +6,65 @@ import {
   RecoveryStatus,
   AuditActor,
 } from "@/src/generated/prisma/client";
+import { getCurrentUser } from "@/lib/current-user";
+
+/* =========================================================
+   GET — USER-SCOPED RECOVERIES + AUDIT LOGS
+   ========================================================= */
 
 export async function GET() {
   try {
-    const recoveries = await db.recoveryAction.findMany({
-      include: {
-        payment: {
-          include: {
-            customer: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    const user = await getCurrentUser();
 
-    const auditLogs = await db.auditLog.findMany({
-      include: {
-        payment: {
-          include: {
-            customer: true,
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized",
+        },
+        { status: 401 }
+      );
+    }
+
+    const userId = user.id;
+
+    const recoveries =
+      await db.recoveryAction.findMany({
+        where: {
+          userId,
+        },
+
+        include: {
+          payment: {
+            include: {
+              customer: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+    const auditLogs =
+      await db.auditLog.findMany({
+        where: {
+          userId,
+        },
+
+        include: {
+          payment: {
+            include: {
+              customer: true,
+            },
+          },
+        },
+
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
 
     return NextResponse.json({
       success: true,
@@ -41,30 +72,60 @@ export async function GET() {
       auditLogs,
     });
   } catch (error) {
-    console.error("GET /api/recoveries error:", error);
+    console.error(
+      "GET /api/recoveries error:",
+      error
+    );
 
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to load recovery data",
+        error:
+          "Failed to load recovery data",
       },
       { status: 500 }
     );
   }
 }
 
-export async function POST(request: Request) {
+/* =========================================================
+   POST — EXECUTE RECOVERY
+   ========================================================= */
+
+export async function POST(
+  request: Request
+) {
   try {
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized",
+        },
+        { status: 401 }
+      );
+    }
+
+    const userId = user.id;
+
     const body = await request.json();
 
-    const recoveryId = String(body.recoveryId || "");
-    const action = String(body.action || "").toUpperCase();
+    const recoveryId = String(
+      body.recoveryId || ""
+    );
+
+    const action = String(
+      body.action || ""
+    ).toUpperCase();
 
     if (!recoveryId) {
       return NextResponse.json(
         {
           success: false,
-          error: "recoveryId is required",
+          error:
+            "recoveryId is required",
         },
         { status: 400 }
       );
@@ -74,70 +135,96 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: "action is required",
+          error:
+            "action is required",
         },
         { status: 400 }
       );
     }
 
-    const recovery = await db.recoveryAction.findUnique({
-      where: {
-        id: recoveryId,
-      },
-      include: {
-        payment: {
-          include: {
-            customer: true,
+    /* -------------------------------------------------------
+       IMPORTANT:
+       Find recovery ONLY if it belongs to this user.
+       ------------------------------------------------------- */
+
+    const recovery =
+      await db.recoveryAction.findFirst({
+        where: {
+          id: recoveryId,
+          userId,
+        },
+
+        include: {
+          payment: {
+            include: {
+              customer: true,
+            },
           },
         },
-      },
-    });
+      });
 
     if (!recovery) {
       return NextResponse.json(
         {
           success: false,
-          error: "Recovery action not found",
+          error:
+            "Recovery action not found",
         },
         { status: 404 }
       );
     }
 
-    /*
-     * ==========================================
-     * STOP RECOVERY
-     * ==========================================
-     */
+    /* =======================================================
+       STOP RECOVERY
+       ======================================================= */
 
     if (action === "STOP") {
-      const updatedRecovery = await db.recoveryAction.update({
-        where: {
-          id: recoveryId,
-        },
-        data: {
-          status: RecoveryStatus.STOPPED,
-        },
-      });
+      const updatedRecovery =
+        await db.recoveryAction.update({
+          where: {
+            id: recoveryId,
+          },
+
+          data: {
+            status:
+              RecoveryStatus.STOPPED,
+          },
+        });
 
       await db.payment.update({
         where: {
           id: recovery.paymentId,
         },
+
         data: {
-          recoveryStatus: RecoveryStatus.STOPPED,
+          recoveryStatus:
+            RecoveryStatus.STOPPED,
         },
       });
 
       await db.auditLog.create({
         data: {
-          paymentId: recovery.paymentId,
-          actor: AuditActor.MERCHANT,
-          event: "RECOVERY_STOPPED",
-          action: "STOP",
-          reason: "Recovery stopped by merchant",
-          metadata: JSON.stringify({
-            recoveryId,
-          }),
+          userId,
+
+          paymentId:
+            recovery.paymentId,
+
+          actor:
+            AuditActor.MERCHANT,
+
+          event:
+            "RECOVERY_STOPPED",
+
+          action:
+            "STOP",
+
+          reason:
+            "Recovery stopped by merchant",
+
+          metadata:
+            JSON.stringify({
+              recoveryId,
+            }),
         },
       });
 
@@ -145,196 +232,246 @@ export async function POST(request: Request) {
         success: true,
         recovered: false,
         amountRecovered: 0,
-        recovery: updatedRecovery,
-        message: "Recovery stopped",
+        recovery:
+          updatedRecovery,
+        message:
+          "Recovery stopped",
       });
     }
 
-    /*
-     * ==========================================
-     * APPROVE RECOVERY
-     * ==========================================
-     */
+    /* =======================================================
+       APPROVE RECOVERY
+       ======================================================= */
 
     if (action === "APPROVE") {
-      const recoveryType = recovery.actionType;
+      const recoveryType =
+        recovery.actionType;
 
-      /*
-       * Mark the recovery as executing.
-       */
+      let executingStatus:
+        RecoveryStatus;
 
-      let executingStatus: RecoveryStatus;
-
-      if (recoveryType === RecoveryActionType.RETRY_PAYMENT) {
-        executingStatus = RecoveryStatus.RETRYING;
-      } else if (
-        recoveryType === RecoveryActionType.SEND_MESSAGE ||
-        recoveryType === RecoveryActionType.SEND_REMINDER
+      if (
+        recoveryType ===
+        RecoveryActionType.RETRY_PAYMENT
       ) {
-        executingStatus = RecoveryStatus.MESSAGE_SENT;
+        executingStatus =
+          RecoveryStatus.RETRYING;
+      } else if (
+        recoveryType ===
+          RecoveryActionType.SEND_MESSAGE ||
+        recoveryType ===
+          RecoveryActionType.SEND_REMINDER
+      ) {
+        executingStatus =
+          RecoveryStatus.MESSAGE_SENT;
       } else {
-        executingStatus = RecoveryStatus.PENDING;
+        executingStatus =
+          RecoveryStatus.PENDING;
       }
 
-      const approvedRecovery = await db.recoveryAction.update({
-        where: {
-          id: recoveryId,
-        },
-        data: {
-          status: executingStatus,
-          executedAt: new Date(),
-        },
-      });
+      const approvedRecovery =
+        await db.recoveryAction.update({
+          where: {
+            id: recoveryId,
+          },
+
+          data: {
+            status:
+              executingStatus,
+
+            executedAt:
+              new Date(),
+          },
+        });
 
       await db.payment.update({
         where: {
           id: recovery.paymentId,
         },
+
         data: {
-          recoveryStatus: executingStatus,
+          recoveryStatus:
+            executingStatus,
         },
       });
 
-      /*
-       * Record merchant approval.
-       */
+      /* -------------------------------------------------------
+         MERCHANT APPROVAL AUDIT
+         ------------------------------------------------------- */
 
       await db.auditLog.create({
         data: {
-          paymentId: recovery.paymentId,
-          actor: AuditActor.MERCHANT,
-          event: "RECOVERY_APPROVED",
-          action: recoveryType,
-          reason: "Recovery approved by merchant",
-          metadata: JSON.stringify({
-            recoveryId,
-            attemptNumber: recovery.attemptNumber,
-          }),
+          userId,
+
+          paymentId:
+            recovery.paymentId,
+
+          actor:
+            AuditActor.MERCHANT,
+
+          event:
+            "RECOVERY_APPROVED",
+
+          action:
+            recoveryType,
+
+          reason:
+            "Recovery approved by merchant",
+
+          metadata:
+            JSON.stringify({
+              recoveryId,
+              attemptNumber:
+                recovery.attemptNumber,
+            }),
         },
       });
 
-      /*
-       * ==========================================
-       * SIMULATED RECOVERY ENGINE
-       * ==========================================
-       *
-       * For the hackathon demo:
-       *
-       * RETRY_PAYMENT
-       * + AI confidence >= 80
-       * + retry count < 3
-       *
-       * = successful recovery.
-       */
+      /* =======================================================
+         SIMULATED RECOVERY ENGINE
+         ======================================================= */
 
-      const aiConfidence = recovery.aiConfidence ?? 0;
+      const aiConfidence =
+        recovery.aiConfidence ?? 0;
 
       const canRecover =
-        recoveryType === RecoveryActionType.RETRY_PAYMENT &&
+        recoveryType ===
+          RecoveryActionType.RETRY_PAYMENT &&
         aiConfidence >= 80 &&
         recovery.payment.retryCount < 3;
 
       if (canRecover) {
-        const recoveredAmount = recovery.payment.amount;
+        const recoveredAmount =
+          recovery.payment.amount;
 
-        /*
-         * Mark recovery as successful.
-         */
+        const finalRecovery =
+          await db.recoveryAction.update({
+            where: {
+              id: recoveryId,
+            },
 
-        const finalRecovery = await db.recoveryAction.update({
-          where: {
-            id: recoveryId,
-          },
-          data: {
-            status: RecoveryStatus.RECOVERED,
-            amountRecovered: recoveredAmount,
-            executedAt: new Date(),
-          },
-        });
+            data: {
+              status:
+                RecoveryStatus.RECOVERED,
 
-        /*
-         * Mark payment as successful.
-         */
+              amountRecovered:
+                recoveredAmount,
+
+              executedAt:
+                new Date(),
+            },
+          });
 
         await db.payment.update({
           where: {
             id: recovery.paymentId,
           },
+
           data: {
-            status: PaymentStatus.SUCCESS,
-            recoveryStatus: RecoveryStatus.RECOVERED,
+            status:
+              PaymentStatus.SUCCESS,
+
+            recoveryStatus:
+              RecoveryStatus.RECOVERED,
+
             retryCount: {
               increment: 1,
             },
           },
         });
 
-        /*
-         * Record successful recovery.
-         */
-
         await db.auditLog.create({
           data: {
-            paymentId: recovery.paymentId,
-            actor: AuditActor.AI_AGENT,
-            event: "PAYMENT_RECOVERED",
-            action: recoveryType,
-            reason: "Recovery retry succeeded",
-            metadata: JSON.stringify({
-              recoveryId,
-              amountRecovered: recoveredAmount,
-              aiConfidence,
-            }),
+            userId,
+
+            paymentId:
+              recovery.paymentId,
+
+            actor:
+              AuditActor.AI_AGENT,
+
+            event:
+              "PAYMENT_RECOVERED",
+
+            action:
+              recoveryType,
+
+            reason:
+              "Recovery retry succeeded",
+
+            metadata:
+              JSON.stringify({
+                recoveryId,
+                amountRecovered:
+                  recoveredAmount,
+                aiConfidence,
+              }),
           },
         });
 
         return NextResponse.json({
           success: true,
           recovered: true,
-          amountRecovered: recoveredAmount,
-          recovery: finalRecovery,
-          message: `₹${Number(recoveredAmount).toLocaleString(
+          amountRecovered:
+            recoveredAmount,
+          recovery:
+            finalRecovery,
+          message: `₹${Number(
+            recoveredAmount
+          ).toLocaleString(
             "en-IN"
           )} recovered successfully`,
         });
       }
 
-      /*
-       * ==========================================
-       * RECOVERY DID NOT COMPLETE
-       * ==========================================
-       */
+      /* =======================================================
+         RECOVERY DID NOT COMPLETE
+         ======================================================= */
 
-      let finalStatus: RecoveryStatus;
+      let finalStatus:
+        RecoveryStatus;
 
       if (
-        recoveryType === RecoveryActionType.SEND_MESSAGE ||
-        recoveryType === RecoveryActionType.SEND_REMINDER
+        recoveryType ===
+          RecoveryActionType.SEND_MESSAGE ||
+        recoveryType ===
+          RecoveryActionType.SEND_REMINDER
       ) {
-        finalStatus = RecoveryStatus.MESSAGE_SENT;
+        finalStatus =
+          RecoveryStatus.MESSAGE_SENT;
       } else {
-        finalStatus = RecoveryStatus.FAILED;
+        finalStatus =
+          RecoveryStatus.FAILED;
       }
 
-      const finalRecovery = await db.recoveryAction.update({
-        where: {
-          id: recoveryId,
-        },
-        data: {
-          status: finalStatus,
-        },
-      });
+      const finalRecovery =
+        await db.recoveryAction.update({
+          where: {
+            id: recoveryId,
+          },
+
+          data: {
+            status:
+              finalStatus,
+          },
+        });
 
       const paymentUpdate: {
-        recoveryStatus: RecoveryStatus;
+        recoveryStatus:
+          RecoveryStatus;
+
         retryCount?: {
           increment: number;
         };
       } = {
-        recoveryStatus: finalStatus,
+        recoveryStatus:
+          finalStatus,
       };
 
-      if (recoveryType === RecoveryActionType.RETRY_PAYMENT) {
+      if (
+        recoveryType ===
+        RecoveryActionType.RETRY_PAYMENT
+      ) {
         paymentUpdate.retryCount = {
           increment: 1,
         };
@@ -344,26 +481,40 @@ export async function POST(request: Request) {
         where: {
           id: recovery.paymentId,
         },
+
         data: paymentUpdate,
       });
 
       await db.auditLog.create({
         data: {
-          paymentId: recovery.paymentId,
-          actor: AuditActor.AI_AGENT,
+          userId,
+
+          paymentId:
+            recovery.paymentId,
+
+          actor:
+            AuditActor.AI_AGENT,
+
           event:
-            finalStatus === RecoveryStatus.MESSAGE_SENT
+            finalStatus ===
+            RecoveryStatus.MESSAGE_SENT
               ? "RECOVERY_MESSAGE_SENT"
               : "RECOVERY_ATTEMPT_FAILED",
-          action: recoveryType,
+
+          action:
+            recoveryType,
+
           reason:
-            finalStatus === RecoveryStatus.MESSAGE_SENT
+            finalStatus ===
+            RecoveryStatus.MESSAGE_SENT
               ? "Recovery message sent to customer"
               : "Recovery attempt did not succeed",
-          metadata: JSON.stringify({
-            recoveryId,
-            aiConfidence,
-          }),
+
+          metadata:
+            JSON.stringify({
+              recoveryId,
+              aiConfidence,
+            }),
         },
       });
 
@@ -371,34 +522,40 @@ export async function POST(request: Request) {
         success: true,
         recovered: false,
         amountRecovered: 0,
-        recovery: finalRecovery,
+        amountAtRisk:
+          recovery.payment.amount,
+        potentialRecovery:
+          recovery.payment.amount,
+        recovery:
+          finalRecovery,
         message:
-          finalStatus === RecoveryStatus.MESSAGE_SENT
-            ? "Recovery message sent"
-            : "Recovery attempt failed",
+          "Recovery action completed",
       });
     }
 
-    /*
-     * ==========================================
-     * INVALID ACTION
-     * ==========================================
-     */
+    /* =======================================================
+       INVALID ACTION
+       ======================================================= */
 
     return NextResponse.json(
       {
         success: false,
-        error: "Invalid action. Use APPROVE or STOP.",
+        error:
+          "Invalid action. Use APPROVE or STOP.",
       },
       { status: 400 }
     );
   } catch (error) {
-    console.error("POST /api/recoveries error:", error);
+    console.error(
+      "POST /api/recoveries error:",
+      error
+    );
 
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to execute recovery action",
+        error:
+          "Failed to execute recovery action",
       },
       { status: 500 }
     );

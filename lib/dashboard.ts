@@ -1,7 +1,28 @@
 import { db } from "./db";
+import { getCurrentUser } from "./current-user";
 
 export async function getDashboardData() {
+  const user = await getCurrentUser();
+
+  // No authenticated merchant = empty dashboard.
+  // Never fall back to global database data.
+  if (!user) {
+    return {
+      totalPayments: 0,
+      failedPayments: 0,
+      revenueAtRisk: 0,
+      recoveryPotential: 0,
+      recoveredRevenue: 0,
+      recoveryRate: 0,
+      highRiskPayments: 0,
+      aiActions: 0,
+    };
+  }
+
   const payments = await db.payment.findMany({
+    where: {
+      userId: user.id,
+    },
     include: {
       customer: true,
       recoveries: true,
@@ -45,10 +66,20 @@ export async function getDashboardData() {
       0
     );
 
-  // Recovery percentage
+  /*
+   * Recovery rate should use the total recovery opportunity,
+   * including money that has already been recovered.
+   *
+   * Example:
+   * ₹10,000 recovered + ₹5,000 still at risk
+   * = ₹15,000 total opportunity
+   * = 66.7% recovery rate
+   */
+  const recoveryBase = recoveredRevenue + revenueAtRisk;
+
   const recoveryRate =
-    revenueAtRisk > 0
-      ? (recoveredRevenue / revenueAtRisk) * 100
+    recoveryBase > 0
+      ? (recoveredRevenue / recoveryBase) * 100
       : 0;
 
   // High and critical risk payments
