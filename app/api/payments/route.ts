@@ -6,13 +6,37 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
+    // ---------------------------------------------------------
+    // TEMPORARY USER ID
+    // ---------------------------------------------------------
+    // We will replace this with the authenticated Firebase user
+    // in the next step.
+    //
+    // For now this is intentionally null because userId is
+    // temporarily nullable during the database migration.
+    // ---------------------------------------------------------
+
+    const userId = null;
+
+    // ---------------------------------------------------------
+    // INPUT
+    // ---------------------------------------------------------
+
     const customerName = String(body.customerName || "").trim();
-    const email = String(body.email || "").trim();
-    const phone = body.phone ? String(body.phone).trim() : null;
+
+    const email = String(body.email || "")
+      .trim()
+      .toLowerCase();
+
+    const phone = body.phone
+      ? String(body.phone).trim()
+      : null;
 
     const amount = Number(body.amount);
 
-    const status = String(body.status || "FAILED") as PaymentStatus;
+    const status = String(
+      body.status || "FAILED"
+    ) as PaymentStatus;
 
     const failureReason = body.failureReason
       ? String(body.failureReason).trim()
@@ -24,7 +48,9 @@ export async function POST(request: Request) {
 
     const retryCount = Number(body.retryCount || 0);
 
-    const language = String(body.language || "English");
+    const language = String(
+      body.language || "English"
+    );
 
     // ---------------------------------------------------------
     // VALIDATION
@@ -71,18 +97,37 @@ export async function POST(request: Request) {
     }
 
     // ---------------------------------------------------------
-    // FIND OR CREATE CUSTOMER
+    // FIND CUSTOMER
     // ---------------------------------------------------------
 
-    let customer = await db.customer.findUnique({
-      where: {
-        email,
-      },
-    });
+    let customer;
+
+    if (userId) {
+      customer = await db.customer.findUnique({
+        where: {
+          userId_email: {
+            userId,
+            email,
+          },
+        },
+      });
+    } else {
+      // Temporary compatibility with existing data.
+      customer = await db.customer.findFirst({
+        where: {
+          email,
+        },
+      });
+    }
+
+    // ---------------------------------------------------------
+    // CREATE CUSTOMER
+    // ---------------------------------------------------------
 
     if (!customer) {
       customer = await db.customer.create({
         data: {
+          userId,
           name: customerName,
           email,
           phone,
@@ -111,15 +156,16 @@ export async function POST(request: Request) {
     // RISK ENGINE
     // ---------------------------------------------------------
 
-    const { analyzePaymentRisk } = await import("@/lib/risk-engine");
+    const { analyzePaymentRisk } =
+      await import("@/lib/risk-engine");
 
     const analysis = analyzePaymentRisk({
-  amount,
-  status,
-  failureReason,
-  retryCount,
-  customerRiskScore: customer.riskScore,
-});
+      amount,
+      status,
+      failureReason,
+      retryCount,
+      customerRiskScore: customer.riskScore,
+    });
 
     const {
       riskScore,
@@ -148,35 +194,54 @@ export async function POST(request: Request) {
     // CREATE PAYMENT
     // ---------------------------------------------------------
 
-   const payment = await db.payment.create({
-  data: {
-    customerId: customer.id,
-    amount,
-    status: status as PaymentStatus,
-    failureReason,
-    riskScore,
-    riskLevel,
-    recoveryStatus: "PENDING",
-    retryCount,
-  },
-});
+    const payment = await db.payment.create({
+      data: {
+        userId,
+
+        customerId: customer.id,
+
+        amount,
+
+        status,
+
+        failureReason,
+
+        riskScore,
+
+        riskLevel,
+
+        recoveryStatus: "PENDING",
+
+        retryCount,
+      },
+    });
 
     // ---------------------------------------------------------
     // CREATE RECOVERY ACTION
     // ---------------------------------------------------------
 
-    const recoveryAction = await db.recoveryAction.create({
-      data: {
-        paymentId: payment.id,
-        customerId: customer.id,
-        actionType: recommendedAction,
-        status: "PENDING",
-        reason: actionReason,
-        aiConfidence,
-        amountRecovered: 0,
-        attemptNumber: retryCount + 1,
-      },
-    });
+    const recoveryAction =
+      await db.recoveryAction.create({
+        data: {
+          userId,
+
+          paymentId: payment.id,
+
+          customerId: customer.id,
+
+          actionType: recommendedAction,
+
+          status: "PENDING",
+
+          reason: actionReason,
+
+          aiConfidence,
+
+          amountRecovered: 0,
+
+          attemptNumber: retryCount + 1,
+        },
+      });
 
     // ---------------------------------------------------------
     // CREATE AUDIT LOG
@@ -184,21 +249,35 @@ export async function POST(request: Request) {
 
     await db.auditLog.create({
       data: {
+        userId,
+
         paymentId: payment.id,
+
         actor: "AI_AGENT",
+
         event: "PAYMENT_ANALYZED",
+
         action: recommendedAction,
+
         reason: diagnosis,
-        metadata: JSON.stringify({
+
+        metadata: {
           riskScore,
+
           riskLevel,
+
           recoveryProbability,
+
           aiConfidence,
+
           failureReason,
+
           retryCount,
+
           dueDate,
+
           language,
-        }),
+        },
       },
     });
 
@@ -212,61 +291,104 @@ export async function POST(request: Request) {
 
         payment: {
           id: payment.id,
+
           customerId: payment.customerId,
+
           amount: Number(payment.amount),
+
           status: payment.status,
+
           failureReason: payment.failureReason,
+
           riskScore: payment.riskScore,
+
           riskLevel: payment.riskLevel,
-          recoveryStatus: payment.recoveryStatus,
+
+          recoveryStatus:
+            payment.recoveryStatus,
+
           retryCount: payment.retryCount,
+
           createdAt: payment.createdAt,
         },
 
         customer: {
           id: customer.id,
+
           name: customer.name,
+
           email: customer.email,
+
           phone: customer.phone,
+
           language: customer.language,
-          lifetimeValue: Number(customer.lifetimeValue),
+
+          lifetimeValue:
+            Number(customer.lifetimeValue),
+
           riskScore: customer.riskScore,
         },
 
         analysis: {
           diagnosis,
+
           riskScore,
+
           riskLevel,
+
           recoveryProbability,
+
           recommendedAction,
+
           actionReason,
+
           aiConfidence,
         },
 
         recoveryAction: {
           id: recoveryAction.id,
-          actionType: recoveryAction.actionType,
+
+          actionType:
+            recoveryAction.actionType,
+
           status: recoveryAction.status,
+
           reason: recoveryAction.reason,
-          aiConfidence: recoveryAction.aiConfidence,
-          amountRecovered: Number(recoveryAction.amountRecovered),
-          attemptNumber: recoveryAction.attemptNumber,
+
+          aiConfidence:
+            recoveryAction.aiConfidence,
+
+          amountRecovered:
+            Number(
+              recoveryAction.amountRecovered
+            ),
+
+          attemptNumber:
+            recoveryAction.attemptNumber,
         },
       },
-      { status: 201 }
+      {
+        status: 201,
+      }
     );
   } catch (error) {
-    console.error("Payment API error:", error);
+    console.error(
+      "Payment API error:",
+      error
+    );
 
     return NextResponse.json(
       {
         success: false,
+
         error:
           error instanceof Error
             ? error.message
             : "Failed to process payment data",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }

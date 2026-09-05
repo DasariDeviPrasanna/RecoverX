@@ -40,6 +40,7 @@ export type RecoveryActionSumAggregateOutputType = {
 
 export type RecoveryActionMinAggregateOutputType = {
   id: string | null
+  userId: string | null
   paymentId: string | null
   customerId: string | null
   actionType: $Enums.RecoveryActionType | null
@@ -54,6 +55,7 @@ export type RecoveryActionMinAggregateOutputType = {
 
 export type RecoveryActionMaxAggregateOutputType = {
   id: string | null
+  userId: string | null
   paymentId: string | null
   customerId: string | null
   actionType: $Enums.RecoveryActionType | null
@@ -68,6 +70,7 @@ export type RecoveryActionMaxAggregateOutputType = {
 
 export type RecoveryActionCountAggregateOutputType = {
   id: number
+  userId: number
   paymentId: number
   customerId: number
   actionType: number
@@ -96,6 +99,7 @@ export type RecoveryActionSumAggregateInputType = {
 
 export type RecoveryActionMinAggregateInputType = {
   id?: true
+  userId?: true
   paymentId?: true
   customerId?: true
   actionType?: true
@@ -110,6 +114,7 @@ export type RecoveryActionMinAggregateInputType = {
 
 export type RecoveryActionMaxAggregateInputType = {
   id?: true
+  userId?: true
   paymentId?: true
   customerId?: true
   actionType?: true
@@ -124,6 +129,7 @@ export type RecoveryActionMaxAggregateInputType = {
 
 export type RecoveryActionCountAggregateInputType = {
   id?: true
+  userId?: true
   paymentId?: true
   customerId?: true
   actionType?: true
@@ -225,6 +231,7 @@ export type RecoveryActionGroupByArgs<ExtArgs extends runtime.Types.Extensions.I
 
 export type RecoveryActionGroupByOutputType = {
   id: string
+  userId: string | null
   paymentId: string
   customerId: string
   actionType: $Enums.RecoveryActionType
@@ -262,6 +269,7 @@ export type RecoveryActionWhereInput = {
   OR?: Prisma.RecoveryActionWhereInput[]
   NOT?: Prisma.RecoveryActionWhereInput | Prisma.RecoveryActionWhereInput[]
   id?: Prisma.StringFilter<"RecoveryAction"> | string
+  userId?: Prisma.StringNullableFilter<"RecoveryAction"> | string | null
   paymentId?: Prisma.StringFilter<"RecoveryAction"> | string
   customerId?: Prisma.StringFilter<"RecoveryAction"> | string
   actionType?: Prisma.EnumRecoveryActionTypeFilter<"RecoveryAction"> | $Enums.RecoveryActionType
@@ -272,12 +280,14 @@ export type RecoveryActionWhereInput = {
   attemptNumber?: Prisma.IntFilter<"RecoveryAction"> | number
   executedAt?: Prisma.DateTimeNullableFilter<"RecoveryAction"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"RecoveryAction"> | Date | string
+  user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   payment?: Prisma.XOR<Prisma.PaymentScalarRelationFilter, Prisma.PaymentWhereInput>
   customer?: Prisma.XOR<Prisma.CustomerScalarRelationFilter, Prisma.CustomerWhereInput>
 }
 
 export type RecoveryActionOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  userId?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentId?: Prisma.SortOrder
   customerId?: Prisma.SortOrder
   actionType?: Prisma.SortOrder
@@ -288,6 +298,7 @@ export type RecoveryActionOrderByWithRelationInput = {
   attemptNumber?: Prisma.SortOrder
   executedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  user?: Prisma.UserOrderByWithRelationInput
   payment?: Prisma.PaymentOrderByWithRelationInput
   customer?: Prisma.CustomerOrderByWithRelationInput
 }
@@ -297,6 +308,7 @@ export type RecoveryActionWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.RecoveryActionWhereInput | Prisma.RecoveryActionWhereInput[]
   OR?: Prisma.RecoveryActionWhereInput[]
   NOT?: Prisma.RecoveryActionWhereInput | Prisma.RecoveryActionWhereInput[]
+  userId?: Prisma.StringNullableFilter<"RecoveryAction"> | string | null
   paymentId?: Prisma.StringFilter<"RecoveryAction"> | string
   customerId?: Prisma.StringFilter<"RecoveryAction"> | string
   actionType?: Prisma.EnumRecoveryActionTypeFilter<"RecoveryAction"> | $Enums.RecoveryActionType
@@ -307,12 +319,14 @@ export type RecoveryActionWhereUniqueInput = Prisma.AtLeast<{
   attemptNumber?: Prisma.IntFilter<"RecoveryAction"> | number
   executedAt?: Prisma.DateTimeNullableFilter<"RecoveryAction"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"RecoveryAction"> | Date | string
+  user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   payment?: Prisma.XOR<Prisma.PaymentScalarRelationFilter, Prisma.PaymentWhereInput>
   customer?: Prisma.XOR<Prisma.CustomerScalarRelationFilter, Prisma.CustomerWhereInput>
 }, "id">
 
 export type RecoveryActionOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
+  userId?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentId?: Prisma.SortOrder
   customerId?: Prisma.SortOrder
   actionType?: Prisma.SortOrder
@@ -335,6 +349,7 @@ export type RecoveryActionScalarWhereWithAggregatesInput = {
   OR?: Prisma.RecoveryActionScalarWhereWithAggregatesInput[]
   NOT?: Prisma.RecoveryActionScalarWhereWithAggregatesInput | Prisma.RecoveryActionScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"RecoveryAction"> | string
+  userId?: Prisma.StringNullableWithAggregatesFilter<"RecoveryAction"> | string | null
   paymentId?: Prisma.StringWithAggregatesFilter<"RecoveryAction"> | string
   customerId?: Prisma.StringWithAggregatesFilter<"RecoveryAction"> | string
   actionType?: Prisma.EnumRecoveryActionTypeWithAggregatesFilter<"RecoveryAction"> | $Enums.RecoveryActionType
@@ -357,12 +372,14 @@ export type RecoveryActionCreateInput = {
   attemptNumber?: number
   executedAt?: Date | string | null
   createdAt?: Date | string
+  user?: Prisma.UserCreateNestedOneWithoutRecoveriesInput
   payment: Prisma.PaymentCreateNestedOneWithoutRecoveriesInput
   customer: Prisma.CustomerCreateNestedOneWithoutRecoveriesInput
 }
 
 export type RecoveryActionUncheckedCreateInput = {
   id?: string
+  userId?: string | null
   paymentId: string
   customerId: string
   actionType: $Enums.RecoveryActionType
@@ -385,12 +402,14 @@ export type RecoveryActionUpdateInput = {
   attemptNumber?: Prisma.IntFieldUpdateOperationsInput | number
   executedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneWithoutRecoveriesNestedInput
   payment?: Prisma.PaymentUpdateOneRequiredWithoutRecoveriesNestedInput
   customer?: Prisma.CustomerUpdateOneRequiredWithoutRecoveriesNestedInput
 }
 
 export type RecoveryActionUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentId?: Prisma.StringFieldUpdateOperationsInput | string
   customerId?: Prisma.StringFieldUpdateOperationsInput | string
   actionType?: Prisma.EnumRecoveryActionTypeFieldUpdateOperationsInput | $Enums.RecoveryActionType
@@ -405,6 +424,7 @@ export type RecoveryActionUncheckedUpdateInput = {
 
 export type RecoveryActionCreateManyInput = {
   id?: string
+  userId?: string | null
   paymentId: string
   customerId: string
   actionType: $Enums.RecoveryActionType
@@ -431,6 +451,7 @@ export type RecoveryActionUpdateManyMutationInput = {
 
 export type RecoveryActionUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentId?: Prisma.StringFieldUpdateOperationsInput | string
   customerId?: Prisma.StringFieldUpdateOperationsInput | string
   actionType?: Prisma.EnumRecoveryActionTypeFieldUpdateOperationsInput | $Enums.RecoveryActionType
@@ -455,6 +476,7 @@ export type RecoveryActionOrderByRelationAggregateInput = {
 
 export type RecoveryActionCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
   paymentId?: Prisma.SortOrder
   customerId?: Prisma.SortOrder
   actionType?: Prisma.SortOrder
@@ -475,6 +497,7 @@ export type RecoveryActionAvgOrderByAggregateInput = {
 
 export type RecoveryActionMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
   paymentId?: Prisma.SortOrder
   customerId?: Prisma.SortOrder
   actionType?: Prisma.SortOrder
@@ -489,6 +512,7 @@ export type RecoveryActionMaxOrderByAggregateInput = {
 
 export type RecoveryActionMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
   paymentId?: Prisma.SortOrder
   customerId?: Prisma.SortOrder
   actionType?: Prisma.SortOrder
@@ -505,6 +529,48 @@ export type RecoveryActionSumOrderByAggregateInput = {
   aiConfidence?: Prisma.SortOrder
   amountRecovered?: Prisma.SortOrder
   attemptNumber?: Prisma.SortOrder
+}
+
+export type RecoveryActionCreateNestedManyWithoutUserInput = {
+  create?: Prisma.XOR<Prisma.RecoveryActionCreateWithoutUserInput, Prisma.RecoveryActionUncheckedCreateWithoutUserInput> | Prisma.RecoveryActionCreateWithoutUserInput[] | Prisma.RecoveryActionUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.RecoveryActionCreateOrConnectWithoutUserInput | Prisma.RecoveryActionCreateOrConnectWithoutUserInput[]
+  createMany?: Prisma.RecoveryActionCreateManyUserInputEnvelope
+  connect?: Prisma.RecoveryActionWhereUniqueInput | Prisma.RecoveryActionWhereUniqueInput[]
+}
+
+export type RecoveryActionUncheckedCreateNestedManyWithoutUserInput = {
+  create?: Prisma.XOR<Prisma.RecoveryActionCreateWithoutUserInput, Prisma.RecoveryActionUncheckedCreateWithoutUserInput> | Prisma.RecoveryActionCreateWithoutUserInput[] | Prisma.RecoveryActionUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.RecoveryActionCreateOrConnectWithoutUserInput | Prisma.RecoveryActionCreateOrConnectWithoutUserInput[]
+  createMany?: Prisma.RecoveryActionCreateManyUserInputEnvelope
+  connect?: Prisma.RecoveryActionWhereUniqueInput | Prisma.RecoveryActionWhereUniqueInput[]
+}
+
+export type RecoveryActionUpdateManyWithoutUserNestedInput = {
+  create?: Prisma.XOR<Prisma.RecoveryActionCreateWithoutUserInput, Prisma.RecoveryActionUncheckedCreateWithoutUserInput> | Prisma.RecoveryActionCreateWithoutUserInput[] | Prisma.RecoveryActionUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.RecoveryActionCreateOrConnectWithoutUserInput | Prisma.RecoveryActionCreateOrConnectWithoutUserInput[]
+  upsert?: Prisma.RecoveryActionUpsertWithWhereUniqueWithoutUserInput | Prisma.RecoveryActionUpsertWithWhereUniqueWithoutUserInput[]
+  createMany?: Prisma.RecoveryActionCreateManyUserInputEnvelope
+  set?: Prisma.RecoveryActionWhereUniqueInput | Prisma.RecoveryActionWhereUniqueInput[]
+  disconnect?: Prisma.RecoveryActionWhereUniqueInput | Prisma.RecoveryActionWhereUniqueInput[]
+  delete?: Prisma.RecoveryActionWhereUniqueInput | Prisma.RecoveryActionWhereUniqueInput[]
+  connect?: Prisma.RecoveryActionWhereUniqueInput | Prisma.RecoveryActionWhereUniqueInput[]
+  update?: Prisma.RecoveryActionUpdateWithWhereUniqueWithoutUserInput | Prisma.RecoveryActionUpdateWithWhereUniqueWithoutUserInput[]
+  updateMany?: Prisma.RecoveryActionUpdateManyWithWhereWithoutUserInput | Prisma.RecoveryActionUpdateManyWithWhereWithoutUserInput[]
+  deleteMany?: Prisma.RecoveryActionScalarWhereInput | Prisma.RecoveryActionScalarWhereInput[]
+}
+
+export type RecoveryActionUncheckedUpdateManyWithoutUserNestedInput = {
+  create?: Prisma.XOR<Prisma.RecoveryActionCreateWithoutUserInput, Prisma.RecoveryActionUncheckedCreateWithoutUserInput> | Prisma.RecoveryActionCreateWithoutUserInput[] | Prisma.RecoveryActionUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.RecoveryActionCreateOrConnectWithoutUserInput | Prisma.RecoveryActionCreateOrConnectWithoutUserInput[]
+  upsert?: Prisma.RecoveryActionUpsertWithWhereUniqueWithoutUserInput | Prisma.RecoveryActionUpsertWithWhereUniqueWithoutUserInput[]
+  createMany?: Prisma.RecoveryActionCreateManyUserInputEnvelope
+  set?: Prisma.RecoveryActionWhereUniqueInput | Prisma.RecoveryActionWhereUniqueInput[]
+  disconnect?: Prisma.RecoveryActionWhereUniqueInput | Prisma.RecoveryActionWhereUniqueInput[]
+  delete?: Prisma.RecoveryActionWhereUniqueInput | Prisma.RecoveryActionWhereUniqueInput[]
+  connect?: Prisma.RecoveryActionWhereUniqueInput | Prisma.RecoveryActionWhereUniqueInput[]
+  update?: Prisma.RecoveryActionUpdateWithWhereUniqueWithoutUserInput | Prisma.RecoveryActionUpdateWithWhereUniqueWithoutUserInput[]
+  updateMany?: Prisma.RecoveryActionUpdateManyWithWhereWithoutUserInput | Prisma.RecoveryActionUpdateManyWithWhereWithoutUserInput[]
+  deleteMany?: Prisma.RecoveryActionScalarWhereInput | Prisma.RecoveryActionScalarWhereInput[]
 }
 
 export type RecoveryActionCreateNestedManyWithoutCustomerInput = {
@@ -607,7 +673,7 @@ export type NullableDateTimeFieldUpdateOperationsInput = {
   set?: Date | string | null
 }
 
-export type RecoveryActionCreateWithoutCustomerInput = {
+export type RecoveryActionCreateWithoutUserInput = {
   id?: string
   actionType: $Enums.RecoveryActionType
   status: $Enums.RecoveryStatus
@@ -618,10 +684,84 @@ export type RecoveryActionCreateWithoutCustomerInput = {
   executedAt?: Date | string | null
   createdAt?: Date | string
   payment: Prisma.PaymentCreateNestedOneWithoutRecoveriesInput
+  customer: Prisma.CustomerCreateNestedOneWithoutRecoveriesInput
+}
+
+export type RecoveryActionUncheckedCreateWithoutUserInput = {
+  id?: string
+  paymentId: string
+  customerId: string
+  actionType: $Enums.RecoveryActionType
+  status: $Enums.RecoveryStatus
+  reason?: string | null
+  aiConfidence?: number | null
+  amountRecovered?: number
+  attemptNumber?: number
+  executedAt?: Date | string | null
+  createdAt?: Date | string
+}
+
+export type RecoveryActionCreateOrConnectWithoutUserInput = {
+  where: Prisma.RecoveryActionWhereUniqueInput
+  create: Prisma.XOR<Prisma.RecoveryActionCreateWithoutUserInput, Prisma.RecoveryActionUncheckedCreateWithoutUserInput>
+}
+
+export type RecoveryActionCreateManyUserInputEnvelope = {
+  data: Prisma.RecoveryActionCreateManyUserInput | Prisma.RecoveryActionCreateManyUserInput[]
+  skipDuplicates?: boolean
+}
+
+export type RecoveryActionUpsertWithWhereUniqueWithoutUserInput = {
+  where: Prisma.RecoveryActionWhereUniqueInput
+  update: Prisma.XOR<Prisma.RecoveryActionUpdateWithoutUserInput, Prisma.RecoveryActionUncheckedUpdateWithoutUserInput>
+  create: Prisma.XOR<Prisma.RecoveryActionCreateWithoutUserInput, Prisma.RecoveryActionUncheckedCreateWithoutUserInput>
+}
+
+export type RecoveryActionUpdateWithWhereUniqueWithoutUserInput = {
+  where: Prisma.RecoveryActionWhereUniqueInput
+  data: Prisma.XOR<Prisma.RecoveryActionUpdateWithoutUserInput, Prisma.RecoveryActionUncheckedUpdateWithoutUserInput>
+}
+
+export type RecoveryActionUpdateManyWithWhereWithoutUserInput = {
+  where: Prisma.RecoveryActionScalarWhereInput
+  data: Prisma.XOR<Prisma.RecoveryActionUpdateManyMutationInput, Prisma.RecoveryActionUncheckedUpdateManyWithoutUserInput>
+}
+
+export type RecoveryActionScalarWhereInput = {
+  AND?: Prisma.RecoveryActionScalarWhereInput | Prisma.RecoveryActionScalarWhereInput[]
+  OR?: Prisma.RecoveryActionScalarWhereInput[]
+  NOT?: Prisma.RecoveryActionScalarWhereInput | Prisma.RecoveryActionScalarWhereInput[]
+  id?: Prisma.StringFilter<"RecoveryAction"> | string
+  userId?: Prisma.StringNullableFilter<"RecoveryAction"> | string | null
+  paymentId?: Prisma.StringFilter<"RecoveryAction"> | string
+  customerId?: Prisma.StringFilter<"RecoveryAction"> | string
+  actionType?: Prisma.EnumRecoveryActionTypeFilter<"RecoveryAction"> | $Enums.RecoveryActionType
+  status?: Prisma.EnumRecoveryStatusFilter<"RecoveryAction"> | $Enums.RecoveryStatus
+  reason?: Prisma.StringNullableFilter<"RecoveryAction"> | string | null
+  aiConfidence?: Prisma.FloatNullableFilter<"RecoveryAction"> | number | null
+  amountRecovered?: Prisma.FloatFilter<"RecoveryAction"> | number
+  attemptNumber?: Prisma.IntFilter<"RecoveryAction"> | number
+  executedAt?: Prisma.DateTimeNullableFilter<"RecoveryAction"> | Date | string | null
+  createdAt?: Prisma.DateTimeFilter<"RecoveryAction"> | Date | string
+}
+
+export type RecoveryActionCreateWithoutCustomerInput = {
+  id?: string
+  actionType: $Enums.RecoveryActionType
+  status: $Enums.RecoveryStatus
+  reason?: string | null
+  aiConfidence?: number | null
+  amountRecovered?: number
+  attemptNumber?: number
+  executedAt?: Date | string | null
+  createdAt?: Date | string
+  user?: Prisma.UserCreateNestedOneWithoutRecoveriesInput
+  payment: Prisma.PaymentCreateNestedOneWithoutRecoveriesInput
 }
 
 export type RecoveryActionUncheckedCreateWithoutCustomerInput = {
   id?: string
+  userId?: string | null
   paymentId: string
   actionType: $Enums.RecoveryActionType
   status: $Enums.RecoveryStatus
@@ -659,23 +799,6 @@ export type RecoveryActionUpdateManyWithWhereWithoutCustomerInput = {
   data: Prisma.XOR<Prisma.RecoveryActionUpdateManyMutationInput, Prisma.RecoveryActionUncheckedUpdateManyWithoutCustomerInput>
 }
 
-export type RecoveryActionScalarWhereInput = {
-  AND?: Prisma.RecoveryActionScalarWhereInput | Prisma.RecoveryActionScalarWhereInput[]
-  OR?: Prisma.RecoveryActionScalarWhereInput[]
-  NOT?: Prisma.RecoveryActionScalarWhereInput | Prisma.RecoveryActionScalarWhereInput[]
-  id?: Prisma.StringFilter<"RecoveryAction"> | string
-  paymentId?: Prisma.StringFilter<"RecoveryAction"> | string
-  customerId?: Prisma.StringFilter<"RecoveryAction"> | string
-  actionType?: Prisma.EnumRecoveryActionTypeFilter<"RecoveryAction"> | $Enums.RecoveryActionType
-  status?: Prisma.EnumRecoveryStatusFilter<"RecoveryAction"> | $Enums.RecoveryStatus
-  reason?: Prisma.StringNullableFilter<"RecoveryAction"> | string | null
-  aiConfidence?: Prisma.FloatNullableFilter<"RecoveryAction"> | number | null
-  amountRecovered?: Prisma.FloatFilter<"RecoveryAction"> | number
-  attemptNumber?: Prisma.IntFilter<"RecoveryAction"> | number
-  executedAt?: Prisma.DateTimeNullableFilter<"RecoveryAction"> | Date | string | null
-  createdAt?: Prisma.DateTimeFilter<"RecoveryAction"> | Date | string
-}
-
 export type RecoveryActionCreateWithoutPaymentInput = {
   id?: string
   actionType: $Enums.RecoveryActionType
@@ -686,11 +809,13 @@ export type RecoveryActionCreateWithoutPaymentInput = {
   attemptNumber?: number
   executedAt?: Date | string | null
   createdAt?: Date | string
+  user?: Prisma.UserCreateNestedOneWithoutRecoveriesInput
   customer: Prisma.CustomerCreateNestedOneWithoutRecoveriesInput
 }
 
 export type RecoveryActionUncheckedCreateWithoutPaymentInput = {
   id?: string
+  userId?: string | null
   customerId: string
   actionType: $Enums.RecoveryActionType
   status: $Enums.RecoveryStatus
@@ -728,8 +853,65 @@ export type RecoveryActionUpdateManyWithWhereWithoutPaymentInput = {
   data: Prisma.XOR<Prisma.RecoveryActionUpdateManyMutationInput, Prisma.RecoveryActionUncheckedUpdateManyWithoutPaymentInput>
 }
 
+export type RecoveryActionCreateManyUserInput = {
+  id?: string
+  paymentId: string
+  customerId: string
+  actionType: $Enums.RecoveryActionType
+  status: $Enums.RecoveryStatus
+  reason?: string | null
+  aiConfidence?: number | null
+  amountRecovered?: number
+  attemptNumber?: number
+  executedAt?: Date | string | null
+  createdAt?: Date | string
+}
+
+export type RecoveryActionUpdateWithoutUserInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  actionType?: Prisma.EnumRecoveryActionTypeFieldUpdateOperationsInput | $Enums.RecoveryActionType
+  status?: Prisma.EnumRecoveryStatusFieldUpdateOperationsInput | $Enums.RecoveryStatus
+  reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConfidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  amountRecovered?: Prisma.FloatFieldUpdateOperationsInput | number
+  attemptNumber?: Prisma.IntFieldUpdateOperationsInput | number
+  executedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  payment?: Prisma.PaymentUpdateOneRequiredWithoutRecoveriesNestedInput
+  customer?: Prisma.CustomerUpdateOneRequiredWithoutRecoveriesNestedInput
+}
+
+export type RecoveryActionUncheckedUpdateWithoutUserInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerId?: Prisma.StringFieldUpdateOperationsInput | string
+  actionType?: Prisma.EnumRecoveryActionTypeFieldUpdateOperationsInput | $Enums.RecoveryActionType
+  status?: Prisma.EnumRecoveryStatusFieldUpdateOperationsInput | $Enums.RecoveryStatus
+  reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConfidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  amountRecovered?: Prisma.FloatFieldUpdateOperationsInput | number
+  attemptNumber?: Prisma.IntFieldUpdateOperationsInput | number
+  executedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type RecoveryActionUncheckedUpdateManyWithoutUserInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentId?: Prisma.StringFieldUpdateOperationsInput | string
+  customerId?: Prisma.StringFieldUpdateOperationsInput | string
+  actionType?: Prisma.EnumRecoveryActionTypeFieldUpdateOperationsInput | $Enums.RecoveryActionType
+  status?: Prisma.EnumRecoveryStatusFieldUpdateOperationsInput | $Enums.RecoveryStatus
+  reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConfidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  amountRecovered?: Prisma.FloatFieldUpdateOperationsInput | number
+  attemptNumber?: Prisma.IntFieldUpdateOperationsInput | number
+  executedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
 export type RecoveryActionCreateManyCustomerInput = {
   id?: string
+  userId?: string | null
   paymentId: string
   actionType: $Enums.RecoveryActionType
   status: $Enums.RecoveryStatus
@@ -751,11 +933,13 @@ export type RecoveryActionUpdateWithoutCustomerInput = {
   attemptNumber?: Prisma.IntFieldUpdateOperationsInput | number
   executedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneWithoutRecoveriesNestedInput
   payment?: Prisma.PaymentUpdateOneRequiredWithoutRecoveriesNestedInput
 }
 
 export type RecoveryActionUncheckedUpdateWithoutCustomerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentId?: Prisma.StringFieldUpdateOperationsInput | string
   actionType?: Prisma.EnumRecoveryActionTypeFieldUpdateOperationsInput | $Enums.RecoveryActionType
   status?: Prisma.EnumRecoveryStatusFieldUpdateOperationsInput | $Enums.RecoveryStatus
@@ -769,6 +953,7 @@ export type RecoveryActionUncheckedUpdateWithoutCustomerInput = {
 
 export type RecoveryActionUncheckedUpdateManyWithoutCustomerInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentId?: Prisma.StringFieldUpdateOperationsInput | string
   actionType?: Prisma.EnumRecoveryActionTypeFieldUpdateOperationsInput | $Enums.RecoveryActionType
   status?: Prisma.EnumRecoveryStatusFieldUpdateOperationsInput | $Enums.RecoveryStatus
@@ -782,6 +967,7 @@ export type RecoveryActionUncheckedUpdateManyWithoutCustomerInput = {
 
 export type RecoveryActionCreateManyPaymentInput = {
   id?: string
+  userId?: string | null
   customerId: string
   actionType: $Enums.RecoveryActionType
   status: $Enums.RecoveryStatus
@@ -803,11 +989,13 @@ export type RecoveryActionUpdateWithoutPaymentInput = {
   attemptNumber?: Prisma.IntFieldUpdateOperationsInput | number
   executedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneWithoutRecoveriesNestedInput
   customer?: Prisma.CustomerUpdateOneRequiredWithoutRecoveriesNestedInput
 }
 
 export type RecoveryActionUncheckedUpdateWithoutPaymentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.StringFieldUpdateOperationsInput | string
   actionType?: Prisma.EnumRecoveryActionTypeFieldUpdateOperationsInput | $Enums.RecoveryActionType
   status?: Prisma.EnumRecoveryStatusFieldUpdateOperationsInput | $Enums.RecoveryStatus
@@ -821,6 +1009,7 @@ export type RecoveryActionUncheckedUpdateWithoutPaymentInput = {
 
 export type RecoveryActionUncheckedUpdateManyWithoutPaymentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   customerId?: Prisma.StringFieldUpdateOperationsInput | string
   actionType?: Prisma.EnumRecoveryActionTypeFieldUpdateOperationsInput | $Enums.RecoveryActionType
   status?: Prisma.EnumRecoveryStatusFieldUpdateOperationsInput | $Enums.RecoveryStatus
@@ -836,6 +1025,7 @@ export type RecoveryActionUncheckedUpdateManyWithoutPaymentInput = {
 
 export type RecoveryActionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  userId?: boolean
   paymentId?: boolean
   customerId?: boolean
   actionType?: boolean
@@ -846,12 +1036,14 @@ export type RecoveryActionSelect<ExtArgs extends runtime.Types.Extensions.Intern
   attemptNumber?: boolean
   executedAt?: boolean
   createdAt?: boolean
+  user?: boolean | Prisma.RecoveryAction$userArgs<ExtArgs>
   payment?: boolean | Prisma.PaymentDefaultArgs<ExtArgs>
   customer?: boolean | Prisma.CustomerDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["recoveryAction"]>
 
 export type RecoveryActionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  userId?: boolean
   paymentId?: boolean
   customerId?: boolean
   actionType?: boolean
@@ -862,12 +1054,14 @@ export type RecoveryActionSelectCreateManyAndReturn<ExtArgs extends runtime.Type
   attemptNumber?: boolean
   executedAt?: boolean
   createdAt?: boolean
+  user?: boolean | Prisma.RecoveryAction$userArgs<ExtArgs>
   payment?: boolean | Prisma.PaymentDefaultArgs<ExtArgs>
   customer?: boolean | Prisma.CustomerDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["recoveryAction"]>
 
 export type RecoveryActionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  userId?: boolean
   paymentId?: boolean
   customerId?: boolean
   actionType?: boolean
@@ -878,12 +1072,14 @@ export type RecoveryActionSelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   attemptNumber?: boolean
   executedAt?: boolean
   createdAt?: boolean
+  user?: boolean | Prisma.RecoveryAction$userArgs<ExtArgs>
   payment?: boolean | Prisma.PaymentDefaultArgs<ExtArgs>
   customer?: boolean | Prisma.CustomerDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["recoveryAction"]>
 
 export type RecoveryActionSelectScalar = {
   id?: boolean
+  userId?: boolean
   paymentId?: boolean
   customerId?: boolean
   actionType?: boolean
@@ -896,16 +1092,19 @@ export type RecoveryActionSelectScalar = {
   createdAt?: boolean
 }
 
-export type RecoveryActionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "paymentId" | "customerId" | "actionType" | "status" | "reason" | "aiConfidence" | "amountRecovered" | "attemptNumber" | "executedAt" | "createdAt", ExtArgs["result"]["recoveryAction"]>
+export type RecoveryActionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "paymentId" | "customerId" | "actionType" | "status" | "reason" | "aiConfidence" | "amountRecovered" | "attemptNumber" | "executedAt" | "createdAt", ExtArgs["result"]["recoveryAction"]>
 export type RecoveryActionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  user?: boolean | Prisma.RecoveryAction$userArgs<ExtArgs>
   payment?: boolean | Prisma.PaymentDefaultArgs<ExtArgs>
   customer?: boolean | Prisma.CustomerDefaultArgs<ExtArgs>
 }
 export type RecoveryActionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  user?: boolean | Prisma.RecoveryAction$userArgs<ExtArgs>
   payment?: boolean | Prisma.PaymentDefaultArgs<ExtArgs>
   customer?: boolean | Prisma.CustomerDefaultArgs<ExtArgs>
 }
 export type RecoveryActionIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  user?: boolean | Prisma.RecoveryAction$userArgs<ExtArgs>
   payment?: boolean | Prisma.PaymentDefaultArgs<ExtArgs>
   customer?: boolean | Prisma.CustomerDefaultArgs<ExtArgs>
 }
@@ -913,11 +1112,13 @@ export type RecoveryActionIncludeUpdateManyAndReturn<ExtArgs extends runtime.Typ
 export type $RecoveryActionPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "RecoveryAction"
   objects: {
+    user: Prisma.$UserPayload<ExtArgs> | null
     payment: Prisma.$PaymentPayload<ExtArgs>
     customer: Prisma.$CustomerPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    userId: string | null
     paymentId: string
     customerId: string
     actionType: $Enums.RecoveryActionType
@@ -1322,6 +1523,7 @@ readonly fields: RecoveryActionFieldRefs;
  */
 export interface Prisma__RecoveryActionClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  user<T extends Prisma.RecoveryAction$userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.RecoveryAction$userArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   payment<T extends Prisma.PaymentDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PaymentDefaultArgs<ExtArgs>>): Prisma.Prisma__PaymentClient<runtime.Types.Result.GetResult<Prisma.$PaymentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   customer<T extends Prisma.CustomerDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CustomerDefaultArgs<ExtArgs>>): Prisma.Prisma__CustomerClient<runtime.Types.Result.GetResult<Prisma.$CustomerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
@@ -1354,6 +1556,7 @@ export interface Prisma__RecoveryActionClient<T, Null = never, ExtArgs extends r
  */
 export interface RecoveryActionFieldRefs {
   readonly id: Prisma.FieldRef<"RecoveryAction", 'String'>
+  readonly userId: Prisma.FieldRef<"RecoveryAction", 'String'>
   readonly paymentId: Prisma.FieldRef<"RecoveryAction", 'String'>
   readonly customerId: Prisma.FieldRef<"RecoveryAction", 'String'>
   readonly actionType: Prisma.FieldRef<"RecoveryAction", 'RecoveryActionType'>
@@ -1762,6 +1965,25 @@ export type RecoveryActionDeleteManyArgs<ExtArgs extends runtime.Types.Extension
    * Limit how many RecoveryActions to delete.
    */
   limit?: number
+}
+
+/**
+ * RecoveryAction.user
+ */
+export type RecoveryAction$userArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the User
+   */
+  select?: Prisma.UserSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the User
+   */
+  omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  where?: Prisma.UserWhereInput
 }
 
 /**

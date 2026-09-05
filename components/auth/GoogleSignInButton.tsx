@@ -32,13 +32,33 @@ export default function GoogleSignInButton() {
 
       const user = result.user;
 
-      // Keep RecoverX login state
-      localStorage.setItem(
-        "recoverx_logged_in",
-        "true"
+      // Get Firebase ID token
+      const idToken = await user.getIdToken(true);
+
+      // Create secure RecoverX server session
+      const response = await fetch(
+        "/api/auth/session",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            idToken,
+          }),
+        }
       );
 
-      // Store basic display information
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.error ||
+            "Unable to create RecoverX session"
+        );
+      }
+
+      // Keep basic profile information locally
       if (user.email) {
         localStorage.setItem(
           "recoverx_user_email",
@@ -60,10 +80,12 @@ export default function GoogleSignInButton() {
         );
       }
 
-      // Go to dashboard
       router.replace("/");
     } catch (error: unknown) {
-      console.error("Google sign-in error:", error);
+      console.error(
+        "Google sign-in error:",
+        error
+      );
 
       const firebaseError = error as {
         code?: string;
@@ -73,7 +95,9 @@ export default function GoogleSignInButton() {
         firebaseError.code ===
         "auth/popup-closed-by-user"
       ) {
-        setError("Google sign-in was cancelled.");
+        setError(
+          "Google sign-in was cancelled."
+        );
       } else if (
         firebaseError.code ===
         "auth/popup-blocked"
@@ -83,7 +107,9 @@ export default function GoogleSignInButton() {
         );
       } else {
         setError(
-          "Google sign-in failed. Please try again."
+          error instanceof Error
+            ? error.message
+            : "Google sign-in failed. Please try again."
         );
       }
     } finally {

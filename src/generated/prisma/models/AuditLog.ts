@@ -26,6 +26,7 @@ export type AggregateAuditLog = {
 
 export type AuditLogMinAggregateOutputType = {
   id: string | null
+  userId: string | null
   paymentId: string | null
   actor: $Enums.AuditActor | null
   event: string | null
@@ -36,6 +37,7 @@ export type AuditLogMinAggregateOutputType = {
 
 export type AuditLogMaxAggregateOutputType = {
   id: string | null
+  userId: string | null
   paymentId: string | null
   actor: $Enums.AuditActor | null
   event: string | null
@@ -46,6 +48,7 @@ export type AuditLogMaxAggregateOutputType = {
 
 export type AuditLogCountAggregateOutputType = {
   id: number
+  userId: number
   paymentId: number
   actor: number
   event: number
@@ -59,6 +62,7 @@ export type AuditLogCountAggregateOutputType = {
 
 export type AuditLogMinAggregateInputType = {
   id?: true
+  userId?: true
   paymentId?: true
   actor?: true
   event?: true
@@ -69,6 +73,7 @@ export type AuditLogMinAggregateInputType = {
 
 export type AuditLogMaxAggregateInputType = {
   id?: true
+  userId?: true
   paymentId?: true
   actor?: true
   event?: true
@@ -79,6 +84,7 @@ export type AuditLogMaxAggregateInputType = {
 
 export type AuditLogCountAggregateInputType = {
   id?: true
+  userId?: true
   paymentId?: true
   actor?: true
   event?: true
@@ -163,6 +169,7 @@ export type AuditLogGroupByArgs<ExtArgs extends runtime.Types.Extensions.Interna
 
 export type AuditLogGroupByOutputType = {
   id: string
+  userId: string | null
   paymentId: string | null
   actor: $Enums.AuditActor
   event: string
@@ -195,6 +202,7 @@ export type AuditLogWhereInput = {
   OR?: Prisma.AuditLogWhereInput[]
   NOT?: Prisma.AuditLogWhereInput | Prisma.AuditLogWhereInput[]
   id?: Prisma.StringFilter<"AuditLog"> | string
+  userId?: Prisma.StringNullableFilter<"AuditLog"> | string | null
   paymentId?: Prisma.StringNullableFilter<"AuditLog"> | string | null
   actor?: Prisma.EnumAuditActorFilter<"AuditLog"> | $Enums.AuditActor
   event?: Prisma.StringFilter<"AuditLog"> | string
@@ -202,11 +210,13 @@ export type AuditLogWhereInput = {
   reason?: Prisma.StringNullableFilter<"AuditLog"> | string | null
   metadata?: Prisma.JsonNullableFilter<"AuditLog">
   createdAt?: Prisma.DateTimeFilter<"AuditLog"> | Date | string
+  user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   payment?: Prisma.XOR<Prisma.PaymentNullableScalarRelationFilter, Prisma.PaymentWhereInput> | null
 }
 
 export type AuditLogOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  userId?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentId?: Prisma.SortOrderInput | Prisma.SortOrder
   actor?: Prisma.SortOrder
   event?: Prisma.SortOrder
@@ -214,6 +224,7 @@ export type AuditLogOrderByWithRelationInput = {
   reason?: Prisma.SortOrderInput | Prisma.SortOrder
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  user?: Prisma.UserOrderByWithRelationInput
   payment?: Prisma.PaymentOrderByWithRelationInput
 }
 
@@ -222,6 +233,7 @@ export type AuditLogWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.AuditLogWhereInput | Prisma.AuditLogWhereInput[]
   OR?: Prisma.AuditLogWhereInput[]
   NOT?: Prisma.AuditLogWhereInput | Prisma.AuditLogWhereInput[]
+  userId?: Prisma.StringNullableFilter<"AuditLog"> | string | null
   paymentId?: Prisma.StringNullableFilter<"AuditLog"> | string | null
   actor?: Prisma.EnumAuditActorFilter<"AuditLog"> | $Enums.AuditActor
   event?: Prisma.StringFilter<"AuditLog"> | string
@@ -229,11 +241,13 @@ export type AuditLogWhereUniqueInput = Prisma.AtLeast<{
   reason?: Prisma.StringNullableFilter<"AuditLog"> | string | null
   metadata?: Prisma.JsonNullableFilter<"AuditLog">
   createdAt?: Prisma.DateTimeFilter<"AuditLog"> | Date | string
+  user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   payment?: Prisma.XOR<Prisma.PaymentNullableScalarRelationFilter, Prisma.PaymentWhereInput> | null
 }, "id">
 
 export type AuditLogOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
+  userId?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentId?: Prisma.SortOrderInput | Prisma.SortOrder
   actor?: Prisma.SortOrder
   event?: Prisma.SortOrder
@@ -251,6 +265,7 @@ export type AuditLogScalarWhereWithAggregatesInput = {
   OR?: Prisma.AuditLogScalarWhereWithAggregatesInput[]
   NOT?: Prisma.AuditLogScalarWhereWithAggregatesInput | Prisma.AuditLogScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"AuditLog"> | string
+  userId?: Prisma.StringNullableWithAggregatesFilter<"AuditLog"> | string | null
   paymentId?: Prisma.StringNullableWithAggregatesFilter<"AuditLog"> | string | null
   actor?: Prisma.EnumAuditActorWithAggregatesFilter<"AuditLog"> | $Enums.AuditActor
   event?: Prisma.StringWithAggregatesFilter<"AuditLog"> | string
@@ -268,11 +283,13 @@ export type AuditLogCreateInput = {
   reason?: string | null
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
+  user?: Prisma.UserCreateNestedOneWithoutAuditLogsInput
   payment?: Prisma.PaymentCreateNestedOneWithoutAuditLogsInput
 }
 
 export type AuditLogUncheckedCreateInput = {
   id?: string
+  userId?: string | null
   paymentId?: string | null
   actor: $Enums.AuditActor
   event: string
@@ -290,11 +307,13 @@ export type AuditLogUpdateInput = {
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneWithoutAuditLogsNestedInput
   payment?: Prisma.PaymentUpdateOneWithoutAuditLogsNestedInput
 }
 
 export type AuditLogUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   actor?: Prisma.EnumAuditActorFieldUpdateOperationsInput | $Enums.AuditActor
   event?: Prisma.StringFieldUpdateOperationsInput | string
@@ -306,6 +325,7 @@ export type AuditLogUncheckedUpdateInput = {
 
 export type AuditLogCreateManyInput = {
   id?: string
+  userId?: string | null
   paymentId?: string | null
   actor: $Enums.AuditActor
   event: string
@@ -327,6 +347,7 @@ export type AuditLogUpdateManyMutationInput = {
 
 export type AuditLogUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   actor?: Prisma.EnumAuditActorFieldUpdateOperationsInput | $Enums.AuditActor
   event?: Prisma.StringFieldUpdateOperationsInput | string
@@ -348,6 +369,7 @@ export type AuditLogOrderByRelationAggregateInput = {
 
 export type AuditLogCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
   paymentId?: Prisma.SortOrder
   actor?: Prisma.SortOrder
   event?: Prisma.SortOrder
@@ -359,6 +381,7 @@ export type AuditLogCountOrderByAggregateInput = {
 
 export type AuditLogMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
   paymentId?: Prisma.SortOrder
   actor?: Prisma.SortOrder
   event?: Prisma.SortOrder
@@ -369,12 +392,55 @@ export type AuditLogMaxOrderByAggregateInput = {
 
 export type AuditLogMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
   paymentId?: Prisma.SortOrder
   actor?: Prisma.SortOrder
   event?: Prisma.SortOrder
   action?: Prisma.SortOrder
   reason?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+}
+
+export type AuditLogCreateNestedManyWithoutUserInput = {
+  create?: Prisma.XOR<Prisma.AuditLogCreateWithoutUserInput, Prisma.AuditLogUncheckedCreateWithoutUserInput> | Prisma.AuditLogCreateWithoutUserInput[] | Prisma.AuditLogUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.AuditLogCreateOrConnectWithoutUserInput | Prisma.AuditLogCreateOrConnectWithoutUserInput[]
+  createMany?: Prisma.AuditLogCreateManyUserInputEnvelope
+  connect?: Prisma.AuditLogWhereUniqueInput | Prisma.AuditLogWhereUniqueInput[]
+}
+
+export type AuditLogUncheckedCreateNestedManyWithoutUserInput = {
+  create?: Prisma.XOR<Prisma.AuditLogCreateWithoutUserInput, Prisma.AuditLogUncheckedCreateWithoutUserInput> | Prisma.AuditLogCreateWithoutUserInput[] | Prisma.AuditLogUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.AuditLogCreateOrConnectWithoutUserInput | Prisma.AuditLogCreateOrConnectWithoutUserInput[]
+  createMany?: Prisma.AuditLogCreateManyUserInputEnvelope
+  connect?: Prisma.AuditLogWhereUniqueInput | Prisma.AuditLogWhereUniqueInput[]
+}
+
+export type AuditLogUpdateManyWithoutUserNestedInput = {
+  create?: Prisma.XOR<Prisma.AuditLogCreateWithoutUserInput, Prisma.AuditLogUncheckedCreateWithoutUserInput> | Prisma.AuditLogCreateWithoutUserInput[] | Prisma.AuditLogUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.AuditLogCreateOrConnectWithoutUserInput | Prisma.AuditLogCreateOrConnectWithoutUserInput[]
+  upsert?: Prisma.AuditLogUpsertWithWhereUniqueWithoutUserInput | Prisma.AuditLogUpsertWithWhereUniqueWithoutUserInput[]
+  createMany?: Prisma.AuditLogCreateManyUserInputEnvelope
+  set?: Prisma.AuditLogWhereUniqueInput | Prisma.AuditLogWhereUniqueInput[]
+  disconnect?: Prisma.AuditLogWhereUniqueInput | Prisma.AuditLogWhereUniqueInput[]
+  delete?: Prisma.AuditLogWhereUniqueInput | Prisma.AuditLogWhereUniqueInput[]
+  connect?: Prisma.AuditLogWhereUniqueInput | Prisma.AuditLogWhereUniqueInput[]
+  update?: Prisma.AuditLogUpdateWithWhereUniqueWithoutUserInput | Prisma.AuditLogUpdateWithWhereUniqueWithoutUserInput[]
+  updateMany?: Prisma.AuditLogUpdateManyWithWhereWithoutUserInput | Prisma.AuditLogUpdateManyWithWhereWithoutUserInput[]
+  deleteMany?: Prisma.AuditLogScalarWhereInput | Prisma.AuditLogScalarWhereInput[]
+}
+
+export type AuditLogUncheckedUpdateManyWithoutUserNestedInput = {
+  create?: Prisma.XOR<Prisma.AuditLogCreateWithoutUserInput, Prisma.AuditLogUncheckedCreateWithoutUserInput> | Prisma.AuditLogCreateWithoutUserInput[] | Prisma.AuditLogUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.AuditLogCreateOrConnectWithoutUserInput | Prisma.AuditLogCreateOrConnectWithoutUserInput[]
+  upsert?: Prisma.AuditLogUpsertWithWhereUniqueWithoutUserInput | Prisma.AuditLogUpsertWithWhereUniqueWithoutUserInput[]
+  createMany?: Prisma.AuditLogCreateManyUserInputEnvelope
+  set?: Prisma.AuditLogWhereUniqueInput | Prisma.AuditLogWhereUniqueInput[]
+  disconnect?: Prisma.AuditLogWhereUniqueInput | Prisma.AuditLogWhereUniqueInput[]
+  delete?: Prisma.AuditLogWhereUniqueInput | Prisma.AuditLogWhereUniqueInput[]
+  connect?: Prisma.AuditLogWhereUniqueInput | Prisma.AuditLogWhereUniqueInput[]
+  update?: Prisma.AuditLogUpdateWithWhereUniqueWithoutUserInput | Prisma.AuditLogUpdateWithWhereUniqueWithoutUserInput[]
+  updateMany?: Prisma.AuditLogUpdateManyWithWhereWithoutUserInput | Prisma.AuditLogUpdateManyWithWhereWithoutUserInput[]
+  deleteMany?: Prisma.AuditLogScalarWhereInput | Prisma.AuditLogScalarWhereInput[]
 }
 
 export type AuditLogCreateNestedManyWithoutPaymentInput = {
@@ -423,8 +489,20 @@ export type EnumAuditActorFieldUpdateOperationsInput = {
   set?: $Enums.AuditActor
 }
 
-export type AuditLogCreateWithoutPaymentInput = {
+export type AuditLogCreateWithoutUserInput = {
   id?: string
+  actor: $Enums.AuditActor
+  event: string
+  action?: string | null
+  reason?: string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  payment?: Prisma.PaymentCreateNestedOneWithoutAuditLogsInput
+}
+
+export type AuditLogUncheckedCreateWithoutUserInput = {
+  id?: string
+  paymentId?: string | null
   actor: $Enums.AuditActor
   event: string
   action?: string | null
@@ -433,8 +511,61 @@ export type AuditLogCreateWithoutPaymentInput = {
   createdAt?: Date | string
 }
 
+export type AuditLogCreateOrConnectWithoutUserInput = {
+  where: Prisma.AuditLogWhereUniqueInput
+  create: Prisma.XOR<Prisma.AuditLogCreateWithoutUserInput, Prisma.AuditLogUncheckedCreateWithoutUserInput>
+}
+
+export type AuditLogCreateManyUserInputEnvelope = {
+  data: Prisma.AuditLogCreateManyUserInput | Prisma.AuditLogCreateManyUserInput[]
+  skipDuplicates?: boolean
+}
+
+export type AuditLogUpsertWithWhereUniqueWithoutUserInput = {
+  where: Prisma.AuditLogWhereUniqueInput
+  update: Prisma.XOR<Prisma.AuditLogUpdateWithoutUserInput, Prisma.AuditLogUncheckedUpdateWithoutUserInput>
+  create: Prisma.XOR<Prisma.AuditLogCreateWithoutUserInput, Prisma.AuditLogUncheckedCreateWithoutUserInput>
+}
+
+export type AuditLogUpdateWithWhereUniqueWithoutUserInput = {
+  where: Prisma.AuditLogWhereUniqueInput
+  data: Prisma.XOR<Prisma.AuditLogUpdateWithoutUserInput, Prisma.AuditLogUncheckedUpdateWithoutUserInput>
+}
+
+export type AuditLogUpdateManyWithWhereWithoutUserInput = {
+  where: Prisma.AuditLogScalarWhereInput
+  data: Prisma.XOR<Prisma.AuditLogUpdateManyMutationInput, Prisma.AuditLogUncheckedUpdateManyWithoutUserInput>
+}
+
+export type AuditLogScalarWhereInput = {
+  AND?: Prisma.AuditLogScalarWhereInput | Prisma.AuditLogScalarWhereInput[]
+  OR?: Prisma.AuditLogScalarWhereInput[]
+  NOT?: Prisma.AuditLogScalarWhereInput | Prisma.AuditLogScalarWhereInput[]
+  id?: Prisma.StringFilter<"AuditLog"> | string
+  userId?: Prisma.StringNullableFilter<"AuditLog"> | string | null
+  paymentId?: Prisma.StringNullableFilter<"AuditLog"> | string | null
+  actor?: Prisma.EnumAuditActorFilter<"AuditLog"> | $Enums.AuditActor
+  event?: Prisma.StringFilter<"AuditLog"> | string
+  action?: Prisma.StringNullableFilter<"AuditLog"> | string | null
+  reason?: Prisma.StringNullableFilter<"AuditLog"> | string | null
+  metadata?: Prisma.JsonNullableFilter<"AuditLog">
+  createdAt?: Prisma.DateTimeFilter<"AuditLog"> | Date | string
+}
+
+export type AuditLogCreateWithoutPaymentInput = {
+  id?: string
+  actor: $Enums.AuditActor
+  event: string
+  action?: string | null
+  reason?: string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  user?: Prisma.UserCreateNestedOneWithoutAuditLogsInput
+}
+
 export type AuditLogUncheckedCreateWithoutPaymentInput = {
   id?: string
+  userId?: string | null
   actor: $Enums.AuditActor
   event: string
   action?: string | null
@@ -469,22 +600,53 @@ export type AuditLogUpdateManyWithWhereWithoutPaymentInput = {
   data: Prisma.XOR<Prisma.AuditLogUpdateManyMutationInput, Prisma.AuditLogUncheckedUpdateManyWithoutPaymentInput>
 }
 
-export type AuditLogScalarWhereInput = {
-  AND?: Prisma.AuditLogScalarWhereInput | Prisma.AuditLogScalarWhereInput[]
-  OR?: Prisma.AuditLogScalarWhereInput[]
-  NOT?: Prisma.AuditLogScalarWhereInput | Prisma.AuditLogScalarWhereInput[]
-  id?: Prisma.StringFilter<"AuditLog"> | string
-  paymentId?: Prisma.StringNullableFilter<"AuditLog"> | string | null
-  actor?: Prisma.EnumAuditActorFilter<"AuditLog"> | $Enums.AuditActor
-  event?: Prisma.StringFilter<"AuditLog"> | string
-  action?: Prisma.StringNullableFilter<"AuditLog"> | string | null
-  reason?: Prisma.StringNullableFilter<"AuditLog"> | string | null
-  metadata?: Prisma.JsonNullableFilter<"AuditLog">
-  createdAt?: Prisma.DateTimeFilter<"AuditLog"> | Date | string
+export type AuditLogCreateManyUserInput = {
+  id?: string
+  paymentId?: string | null
+  actor: $Enums.AuditActor
+  event: string
+  action?: string | null
+  reason?: string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+}
+
+export type AuditLogUpdateWithoutUserInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  actor?: Prisma.EnumAuditActorFieldUpdateOperationsInput | $Enums.AuditActor
+  event?: Prisma.StringFieldUpdateOperationsInput | string
+  action?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  payment?: Prisma.PaymentUpdateOneWithoutAuditLogsNestedInput
+}
+
+export type AuditLogUncheckedUpdateWithoutUserInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  actor?: Prisma.EnumAuditActorFieldUpdateOperationsInput | $Enums.AuditActor
+  event?: Prisma.StringFieldUpdateOperationsInput | string
+  action?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type AuditLogUncheckedUpdateManyWithoutUserInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  actor?: Prisma.EnumAuditActorFieldUpdateOperationsInput | $Enums.AuditActor
+  event?: Prisma.StringFieldUpdateOperationsInput | string
+  action?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type AuditLogCreateManyPaymentInput = {
   id?: string
+  userId?: string | null
   actor: $Enums.AuditActor
   event: string
   action?: string | null
@@ -501,10 +663,12 @@ export type AuditLogUpdateWithoutPaymentInput = {
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneWithoutAuditLogsNestedInput
 }
 
 export type AuditLogUncheckedUpdateWithoutPaymentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   actor?: Prisma.EnumAuditActorFieldUpdateOperationsInput | $Enums.AuditActor
   event?: Prisma.StringFieldUpdateOperationsInput | string
   action?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -515,6 +679,7 @@ export type AuditLogUncheckedUpdateWithoutPaymentInput = {
 
 export type AuditLogUncheckedUpdateManyWithoutPaymentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   actor?: Prisma.EnumAuditActorFieldUpdateOperationsInput | $Enums.AuditActor
   event?: Prisma.StringFieldUpdateOperationsInput | string
   action?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -527,6 +692,7 @@ export type AuditLogUncheckedUpdateManyWithoutPaymentInput = {
 
 export type AuditLogSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  userId?: boolean
   paymentId?: boolean
   actor?: boolean
   event?: boolean
@@ -534,11 +700,13 @@ export type AuditLogSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   reason?: boolean
   metadata?: boolean
   createdAt?: boolean
+  user?: boolean | Prisma.AuditLog$userArgs<ExtArgs>
   payment?: boolean | Prisma.AuditLog$paymentArgs<ExtArgs>
 }, ExtArgs["result"]["auditLog"]>
 
 export type AuditLogSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  userId?: boolean
   paymentId?: boolean
   actor?: boolean
   event?: boolean
@@ -546,11 +714,13 @@ export type AuditLogSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   reason?: boolean
   metadata?: boolean
   createdAt?: boolean
+  user?: boolean | Prisma.AuditLog$userArgs<ExtArgs>
   payment?: boolean | Prisma.AuditLog$paymentArgs<ExtArgs>
 }, ExtArgs["result"]["auditLog"]>
 
 export type AuditLogSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  userId?: boolean
   paymentId?: boolean
   actor?: boolean
   event?: boolean
@@ -558,11 +728,13 @@ export type AuditLogSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   reason?: boolean
   metadata?: boolean
   createdAt?: boolean
+  user?: boolean | Prisma.AuditLog$userArgs<ExtArgs>
   payment?: boolean | Prisma.AuditLog$paymentArgs<ExtArgs>
 }, ExtArgs["result"]["auditLog"]>
 
 export type AuditLogSelectScalar = {
   id?: boolean
+  userId?: boolean
   paymentId?: boolean
   actor?: boolean
   event?: boolean
@@ -572,24 +744,29 @@ export type AuditLogSelectScalar = {
   createdAt?: boolean
 }
 
-export type AuditLogOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "paymentId" | "actor" | "event" | "action" | "reason" | "metadata" | "createdAt", ExtArgs["result"]["auditLog"]>
+export type AuditLogOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "paymentId" | "actor" | "event" | "action" | "reason" | "metadata" | "createdAt", ExtArgs["result"]["auditLog"]>
 export type AuditLogInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  user?: boolean | Prisma.AuditLog$userArgs<ExtArgs>
   payment?: boolean | Prisma.AuditLog$paymentArgs<ExtArgs>
 }
 export type AuditLogIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  user?: boolean | Prisma.AuditLog$userArgs<ExtArgs>
   payment?: boolean | Prisma.AuditLog$paymentArgs<ExtArgs>
 }
 export type AuditLogIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  user?: boolean | Prisma.AuditLog$userArgs<ExtArgs>
   payment?: boolean | Prisma.AuditLog$paymentArgs<ExtArgs>
 }
 
 export type $AuditLogPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "AuditLog"
   objects: {
+    user: Prisma.$UserPayload<ExtArgs> | null
     payment: Prisma.$PaymentPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    userId: string | null
     paymentId: string | null
     actor: $Enums.AuditActor
     event: string
@@ -991,6 +1168,7 @@ readonly fields: AuditLogFieldRefs;
  */
 export interface Prisma__AuditLogClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  user<T extends Prisma.AuditLog$userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AuditLog$userArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   payment<T extends Prisma.AuditLog$paymentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AuditLog$paymentArgs<ExtArgs>>): Prisma.Prisma__PaymentClient<runtime.Types.Result.GetResult<Prisma.$PaymentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1022,6 +1200,7 @@ export interface Prisma__AuditLogClient<T, Null = never, ExtArgs extends runtime
  */
 export interface AuditLogFieldRefs {
   readonly id: Prisma.FieldRef<"AuditLog", 'String'>
+  readonly userId: Prisma.FieldRef<"AuditLog", 'String'>
   readonly paymentId: Prisma.FieldRef<"AuditLog", 'String'>
   readonly actor: Prisma.FieldRef<"AuditLog", 'AuditActor'>
   readonly event: Prisma.FieldRef<"AuditLog", 'String'>
@@ -1427,6 +1606,25 @@ export type AuditLogDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Inte
    * Limit how many AuditLogs to delete.
    */
   limit?: number
+}
+
+/**
+ * AuditLog.user
+ */
+export type AuditLog$userArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the User
+   */
+  select?: Prisma.UserSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the User
+   */
+  omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  where?: Prisma.UserWhereInput
 }
 
 /**

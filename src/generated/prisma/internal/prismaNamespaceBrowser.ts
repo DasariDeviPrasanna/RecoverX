@@ -51,6 +51,7 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
+  User: 'User',
   Customer: 'Customer',
   Payment: 'Payment',
   RecoveryAction: 'RecoveryAction',
@@ -73,8 +74,22 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
+export const UserScalarFieldEnum = {
+  id: 'id',
+  firebaseUid: 'firebaseUid',
+  name: 'name',
+  email: 'email',
+  businessName: 'businessName',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
 export const CustomerScalarFieldEnum = {
   id: 'id',
+  userId: 'userId',
   name: 'name',
   email: 'email',
   phone: 'phone',
@@ -90,6 +105,7 @@ export type CustomerScalarFieldEnum = (typeof CustomerScalarFieldEnum)[keyof typ
 
 export const PaymentScalarFieldEnum = {
   id: 'id',
+  userId: 'userId',
   customerId: 'customerId',
   amount: 'amount',
   status: 'status',
@@ -107,6 +123,7 @@ export type PaymentScalarFieldEnum = (typeof PaymentScalarFieldEnum)[keyof typeo
 
 export const RecoveryActionScalarFieldEnum = {
   id: 'id',
+  userId: 'userId',
   paymentId: 'paymentId',
   customerId: 'customerId',
   actionType: 'actionType',
@@ -124,6 +141,7 @@ export type RecoveryActionScalarFieldEnum = (typeof RecoveryActionScalarFieldEnu
 
 export const AuditLogScalarFieldEnum = {
   id: 'id',
+  userId: 'userId',
   paymentId: 'paymentId',
   actor: 'actor',
   event: 'event',

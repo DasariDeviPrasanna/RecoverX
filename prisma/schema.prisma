@@ -46,76 +46,118 @@ enum AuditActor {
   MERCHANT
 }
 
+model User {
+  id           String   @id @default(cuid())
+  firebaseUid  String   @unique
+  name         String
+  email        String   @unique
+  businessName String?
+
+  customers  Customer[]
+  payments   Payment[]
+  recoveries RecoveryAction[]
+  auditLogs  AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Customer {
-  id            String   @id @default(cuid())
+  id String @id @default(cuid())
+
+  userId String?
+  user   User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   name          String
-  email         String   @unique
+  email         String
   phone         String?
   language      String   @default("English")
   lifetimeValue Float    @default(0)
   riskScore     Int      @default(0)
 
-  payments      Payment[]
-  recoveries    RecoveryAction[]
+  payments   Payment[]
+  recoveries RecoveryAction[]
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, email])
+  @@index([userId])
 }
 
 model Payment {
-  id              String        @id @default(cuid())
-  customerId      String
-  customer        Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  id String @id @default(cuid())
 
-  amount          Float
-  status          PaymentStatus
-  failureReason   String?
-  riskScore       Int           @default(0)
-  riskLevel       RiskLevel     @default(LOW)
+  userId String?
+  user   User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  recoveryStatus  RecoveryStatus @default(PENDING)
-  retryCount      Int            @default(0)
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  amount        Float
+  status        PaymentStatus
+  failureReason String?
 
-  recoveries      RecoveryAction[]
-  auditLogs       AuditLog[]
+  riskScore Int       @default(0)
+  riskLevel RiskLevel @default(LOW)
+
+  recoveryStatus RecoveryStatus @default(PENDING)
+  retryCount     Int            @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  recoveries RecoveryAction[]
+  auditLogs  AuditLog[]
+
+  @@index([userId])
+  @@index([customerId])
 }
 
 model RecoveryAction {
-  id              String             @id @default(cuid())
+  id String @id @default(cuid())
 
-  paymentId       String
-  payment         Payment            @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  userId String?
+  user   User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  customerId      String
-  customer        Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  paymentId String
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   actionType      RecoveryActionType
   status          RecoveryStatus
-
   reason          String?
   aiConfidence    Float?
   amountRecovered Float              @default(0)
-
   attemptNumber   Int                @default(1)
 
-  executedAt      DateTime?
-  createdAt       DateTime           @default(now())
+  executedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+  @@index([paymentId])
+  @@index([customerId])
 }
 
 model AuditLog {
-  id          String      @id @default(cuid())
+  id String @id @default(cuid())
 
-  paymentId   String?
-  payment     Payment?    @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  userId String?
+  user   User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  actor       AuditActor
-  event       String
-  action      String?
-  reason      String?
-  metadata    Json?
+  paymentId String?
+  payment   Payment? @relation(fields: [paymentId], references: [id], onDelete: Cascade)
 
-  createdAt   DateTime @default(now())
+  actor    AuditActor
+  event    String
+  action   String?
+  reason   String?
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([paymentId])
 }

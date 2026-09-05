@@ -1,9 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import LoginForm from "@/components/auth/LoginForm";
+import SignupForm from "@/components/auth/SignupForm";
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter();
 
   return (
@@ -20,7 +20,7 @@ export default function LoginPage() {
           className="absolute inset-0 opacity-[0.08]"
           style={{
             backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)",
+              "linear-gradient(rgba(255,255,255,0.15) 1px, transparent 0), linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 0)",
             backgroundSize: "50px 50px",
           }}
         />
@@ -59,22 +59,22 @@ export default function LoginPage() {
                 </div>
 
                 <h1 className="max-w-lg text-5xl font-bold leading-[1.08] tracking-tight">
-                  Recover revenue
+                  Turn failed payments
                   <br />
 
                   <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400 bg-clip-text text-transparent">
-                    before it disappears.
+                    into recovered revenue.
                   </span>
                 </h1>
 
                 <p className="mt-6 max-w-lg text-base leading-7 text-zinc-400">
-                  RecoverX detects payment failures, diagnoses the cause,
-                  chooses the safest recovery strategy, and measures the
-                  revenue recovered.
+                  Create your merchant workspace and let RecoverX
+                  intelligently detect, diagnose and recover
+                  revenue at risk.
                 </p>
               </div>
 
-              {/* Recovery Pipeline */}
+              {/* Pipeline */}
               <div className="mt-12 grid grid-cols-4 gap-3">
                 {[
                   ["01", "Detect"],
@@ -105,7 +105,7 @@ export default function LoginPage() {
 
           {/* RIGHT SIDE */}
           <section className="p-7 sm:p-10 lg:p-12">
-            {/* Mobile logo */}
+            {/* Mobile Logo */}
             <div className="mb-10 flex items-center gap-3 lg:hidden">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 font-black text-black">
                 R
@@ -124,46 +124,36 @@ export default function LoginPage() {
 
             <div className="mx-auto max-w-md">
               {/* Heading */}
-              <div className="mb-8">
+              <div className="mb-7">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-400">
-                  Merchant Portal
+                  Merchant Registration
                 </p>
 
                 <h2 className="text-3xl font-bold tracking-tight">
-                  Welcome back
+                  Create your account
                 </h2>
 
                 <p className="mt-2 text-sm text-zinc-500">
-                  Sign in to access your recovery command center.
+                  Set up your RecoverX recovery command center.
                 </p>
               </div>
 
-              {/* Real Firebase Login */}
-              <LoginForm />
-              <div className="mt-6 text-center text-sm text-zinc-500">
-  Don't have an account?{" "}
-  <button
-    type="button"
-    onClick={() => router.push("/signup")}
-    className="font-semibold text-cyan-400 transition hover:text-cyan-300"
-  >
-    Create account
-  </button>
-</div>
+              {/* Signup Form */}
+              <SignupForm />
 
-              {/* Footer */}
+              {/* Terms */}
               <div className="mt-8 text-center text-xs leading-5 text-zinc-600">
-                By continuing, you agree to the RecoverX merchant
-                terms and privacy policy.
+                By creating an account, you agree to the RecoverX
+                merchant terms and privacy policy.
               </div>
 
-              {/* Back */}
+              {/* Back to Login */}
               <button
                 type="button"
-                onClick={() => router.push("/")}
+                onClick={() => router.push("/login")}
                 className="mt-5 w-full text-center text-xs text-zinc-600 transition hover:text-zinc-400"
               >
-                RecoverX
+                Back to Sign In
               </button>
             </div>
           </section>
